@@ -252,7 +252,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 0.9.10
-Release: 1%{?dist}%{?extra_release}
+Release: 2%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 Source: http://libvirt.org/sources/libvirt-%{version}.tar.gz
@@ -1274,6 +1274,9 @@ rm -f $RPM_BUILD_ROOT%{_sysconfdir}/sysctl.d/libvirtd
 %endif
 
 %changelog
+* Thu Mar 15 2012 Daniel P. Berrange <berrange@redhat.com> - 0.9.10-2
+- Rebuild for libparted soname break
+
 * Mon Feb 13 2012 Daniel P. Berrange <berrange@redhat.com> - 0.9.10-1
 - Update to 0.9.10
 
