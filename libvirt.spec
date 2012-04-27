@@ -1457,8 +1457,8 @@ rm -f $RPM_BUILD_ROOT%{_sysconfdir}/sysctl.d/libvirtd
 %{_libdir}/python*/site-packages/libvirt_qemu.py*
 %{_libdir}/python*/site-packages/libvirtmod*
 %doc python/tests/*.py
-%doc python/TODO
-%doc examples/python
+%doc TODO
+%doc examples
 %doc examples/domain-events/events-python
 %endif
 
