@@ -272,13 +272,11 @@
 
 Summary: Library providing a simple virtualization API
 Name: libvirt
-Version: 0.9.11.2
+Version: 0.9.11.3
 Release: 1%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 Source: http://libvirt.org/sources/libvirt-%{version}.tar.gz
-# Add some testfiles that didn't make the tarball
-Patch1: %{name}-add-test-files.patch
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 URL: http://libvirt.org/
 
@@ -738,7 +736,6 @@ of recent versions of Linux (and other OSes).
 
 %prep
 %setup -q
-%patch1 -p1
 
 %build
 %if ! %{with_xen}
@@ -1457,14 +1454,14 @@ rm -f $RPM_BUILD_ROOT%{_sysconfdir}/sysctl.d/libvirtd
 %{_libdir}/python*/site-packages/libvirt_qemu.py*
 %{_libdir}/python*/site-packages/libvirtmod*
 %doc python/tests/*.py
-%doc TODO
-%doc examples
+%doc python/TODO
+%doc examples/python
 %doc examples/domain-events/events-python
 %endif
 
 %changelog
-* Thu Apr 26 2012 Cole Robinson <crobinso@redhat.com> - 0.9.11.2-1
-- Rebased to version 0.9.11.2
+* Thu Apr 26 2012 Cole Robinson <crobinso@redhat.com> - 0.9.11.3-1
+- Rebased to version 0.9.11.3
 - Abide URI username when connecting to hypervisor (bz 811397)
 - Fix managed USB mode (bz 814866)
 - Fix crash connecting to ESX host (bz 811891)
