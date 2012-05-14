@@ -224,7 +224,7 @@
 %define with_libpcap  0%{!?_without_libpcap:%{server_drivers}}
 %define with_macvtap  0%{!?_without_macvtap:%{server_drivers}}
 
-# numad is used to manage the CPU placement dynamically,
+# numad is used to manage the CPU and memory placement dynamically,
 # it's not available on s390[x] and ARM.
 %if 0%{?fedora} >= 17 || 0%{?rhel} >= 6
 %ifnarch s390 s390x %{arm}
@@ -272,13 +272,17 @@
 
 Summary: Library providing a simple virtualization API
 Name: libvirt
-Version: 0.9.11.3
+Version: 0.9.12
 Release: 1%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
-Source: http://libvirt.org/sources/libvirt-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 URL: http://libvirt.org/
+
+%if %(echo %{version} | grep -o \\. | wc -l) == 3
+%define mainturl stable_updates/
+%endif
+Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -1460,6 +1464,11 @@ rm -f $RPM_BUILD_ROOT%{_sysconfdir}/sysctl.d/libvirtd
 %endif
 
 %changelog
+* Mon May 14 2012 Daniel Veillard <veillard@redhat.com> - 0.9.12-1
+- qemu: allow snapshotting of sheepdog and rbd disks
+- blockjob: add new APIs
+- a lot of bug fixes, improvements and portability work
+
 * Thu Apr 26 2012 Cole Robinson <crobinso@redhat.com> - 0.9.11.3-1
 - Rebased to version 0.9.11.3
 - Abide URI username when connecting to hypervisor (bz 811397)
