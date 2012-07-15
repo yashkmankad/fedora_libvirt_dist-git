@@ -441,6 +441,10 @@ BuildRequires: device-mapper-devel
 %endif
 %if %{with_storage_rbd}
 BuildRequires: ceph-devel
+# XXX: Fedora only change, needed for building 0.9.13 on F17. Can
+#      be dropped 0.9.14 when this patch should be applied:
+# https://www.redhat.com/archives/libvir-list/2012-July/msg00634.html
+BuildRequires: openssl-devel
 %endif
 %endif
 %if %{with_numactl}
