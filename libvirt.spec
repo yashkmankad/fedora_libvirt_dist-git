@@ -301,7 +301,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 0.9.13
-Release: 2%{?dist}%{?extra_release}
+Release: 3%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -311,6 +311,9 @@ URL: http://libvirt.org/
 %define mainturl stable_updates/
 %endif
 Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
+
+# Upstream patch to fix RHBZ#842114.  Can be removed in 0.9.14.
+Patch0: 0001-Fix-daemon-auto-spawning.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -982,6 +985,8 @@ of recent versions of Linux (and other OSes).
 
 %prep
 %setup -q
+
+%patch0 -p1
 
 %build
 %if ! %{with_xen}
@@ -1792,6 +1797,9 @@ rm -f $RPM_BUILD_ROOT%{_sysconfdir}/sysctl.d/libvirtd
 %endif
 
 %changelog
+* Mon Jul 23 2012 Richard W.M. Jones <rjones@redhat.com> - 0.9.13-3
+- Add upstream patch to fix RHBZ#842114.
+
 * Thu Jul 19 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.9.13-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_18_Mass_Rebuild
 
