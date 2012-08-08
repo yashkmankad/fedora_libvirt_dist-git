@@ -67,21 +67,27 @@
 %define with_esx           0%{!?_without_esx:1}
 %define with_hyperv        0%{!?_without_hyperv:1}
 %define with_xenapi        0%{!?_without_xenapi:1}
+%define with_parallels     0%{!?_without_parallels:1}
 
 # Then the secondary host drivers, which run inside libvirtd
-%define with_network       0%{!?_without_network:%{server_drivers}}
-%define with_storage_fs    0%{!?_without_storage_fs:%{server_drivers}}
-%define with_storage_lvm   0%{!?_without_storage_lvm:%{server_drivers}}
-%define with_storage_iscsi 0%{!?_without_storage_iscsi:%{server_drivers}}
-%define with_storage_disk  0%{!?_without_storage_disk:%{server_drivers}}
-%define with_storage_mpath 0%{!?_without_storage_mpath:%{server_drivers}}
+%define with_network          0%{!?_without_network:%{server_drivers}}
+%define with_storage_fs       0%{!?_without_storage_fs:%{server_drivers}}
+%define with_storage_lvm      0%{!?_without_storage_lvm:%{server_drivers}}
+%define with_storage_iscsi    0%{!?_without_storage_iscsi:%{server_drivers}}
+%define with_storage_disk     0%{!?_without_storage_disk:%{server_drivers}}
+%define with_storage_mpath    0%{!?_without_storage_mpath:%{server_drivers}}
 %if 0%{?fedora} >= 16
-%define with_storage_rbd   0%{!?_without_storage_rbd:%{server_drivers}}
+%define with_storage_rbd      0%{!?_without_storage_rbd:%{server_drivers}}
 %else
-%define with_storage_rbd   0
+%define with_storage_rbd      0
 %endif
-%define with_numactl       0%{!?_without_numactl:%{server_drivers}}
-%define with_selinux       0%{!?_without_selinux:%{server_drivers}}
+%if 0%{?fedora} >= 17
+%define with_storage_sheepdog 0%{!?_without_storage_sheepdog:%{server_drivers}}
+%else
+%define with_storage_sheepdog 0
+%endif
+%define with_numactl          0%{!?_without_numactl:%{server_drivers}}
+%define with_selinux          0%{!?_without_selinux:%{server_drivers}}
 
 # A few optional bits off by default, we enable later
 %define with_polkit        0%{!?_without_polkit:0}
@@ -131,6 +137,7 @@
 %define with_xenapi 0
 %define with_libxl 0
 %define with_hyperv 0
+%define with_parallels 0
 %endif
 
 # Fedora 17 / RHEL-7 are first where we use systemd. Although earlier
@@ -224,6 +231,7 @@
 %define with_storage_iscsi 0
 %define with_storage_mpath 0
 %define with_storage_rbd 0
+%define with_storage_sheepdog 0
 %define with_storage_disk 0
 %endif
 
@@ -300,8 +308,8 @@
 
 Summary: Library providing a simple virtualization API
 Name: libvirt
-Version: 0.9.13
-Release: 3%{?dist}%{?extra_release}
+Version: 0.10.0
+Release: 0rc0%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -310,10 +318,8 @@ URL: http://libvirt.org/
 %if %(echo %{version} | grep -o \\. | wc -l) == 3
 %define mainturl stable_updates/
 %endif
-Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
-
-# Upstream patch to fix RHBZ#842114.  Can be removed in 0.9.14.
-Patch0: 0001-Fix-daemon-auto-spawning.patch
+Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}-rc0.tar.gz
+Patch0: libvirt-0.10.0-rc0-release-naming.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -323,8 +329,30 @@ Requires: libvirt-daemon-config-network = %{version}-%{release}
 %if %{with_nwfilter}
 Requires: libvirt-daemon-config-nwfilter = %{version}-%{release}
 %endif
-# XXX when we turn on driver modules, we need to add
-# deps on each driver (Requires: libvirt-daemon-drv-qemu)
+%if %{with_driver_modules}
+%if %{with_libxl}
+Requires: libvirt-daemon-driver-libxl = %{version}-%{release}
+%endif
+%if %{with_lxc}
+Requires: libvirt-daemon-driver-lxc = %{version}-%{release}
+%endif
+%if %{with_qemu}
+Requires: libvirt-daemon-driver-qemu = %{version}-%{release}
+%endif
+%if %{with_uml}
+Requires: libvirt-daemon-driver-uml = %{version}-%{release}
+%endif
+%if %{with_xen}
+Requires: libvirt-daemon-driver-xen = %{version}-%{release}
+%endif
+
+Requires: libvirt-daemon-driver-interface = %{version}-%{release}
+Requires: libvirt-daemon-driver-secret = %{version}-%{release}
+Requires: libvirt-daemon-driver-storage = %{version}-%{release}
+Requires: libvirt-daemon-driver-network = %{version}-%{release}
+Requires: libvirt-daemon-driver-nodedev = %{version}-%{release}
+Requires: libvirt-daemon-driver-nwfilter = %{version}-%{release}
+%endif
 %endif
 Requires: libvirt-client = %{version}-%{release}
 
@@ -610,6 +638,10 @@ Requires: device-mapper
 # For RBD support
 Requires: ceph
 %endif
+%if %{with_storage_sheepdog}
+# For Sheepdog support
+Requires: sheepdog
+%endif
 %if %{with_cgconfig}
 Requires: libcgroup
 %endif
@@ -737,7 +769,9 @@ Summary: Qemu driver plugin for the libvirtd daemon
 Group: Development/Libraries
 Requires: libvirt-daemon = %{version}-%{release}
 # There really is a hard cross-driver dependency here
+%if %{with_driver_modules}
 Requires: libvirt-daemon-driver-network = %{version}-%{release}
+%endif
 
 %description daemon-driver-qemu
 The qemu driver plugin for the libvirtd daemon, providing
@@ -752,7 +786,9 @@ Summary: LXC driver plugin for the libvirtd daemon
 Group: Development/Libraries
 Requires: libvirt-daemon = %{version}-%{release}
 # There really is a hard cross-driver dependency here
+%if %{with_driver_modules}
 Requires: libvirt-daemon-driver-network = %{version}-%{release}
+%endif
 
 %description daemon-driver-lxc
 The LXC driver plugin for the libvirtd daemon, providing
@@ -985,7 +1021,6 @@ of recent versions of Linux (and other OSes).
 
 %prep
 %setup -q
-
 %patch0 -p1
 
 %build
@@ -1041,6 +1076,10 @@ of recent versions of Linux (and other OSes).
 %define _without_vmware --without-vmware
 %endif
 
+%if ! %{with_parallels}
+%define _without_parallels --without-parallels
+%endif
+
 %if ! %{with_polkit}
 %define _without_polkit --without-polkit
 %endif
@@ -1087,6 +1126,10 @@ of recent versions of Linux (and other OSes).
 
 %if ! %{with_storage_rbd}
 %define _without_storage_rbd --without-storage-rbd
+%endif
+
+%if ! %{with_storage_sheepdog}
+%define _without_storage_sheepdog --without-storage-sheepdog
 %endif
 
 %if ! %{with_numactl}
@@ -1179,6 +1222,7 @@ autoreconf -if
            %{?_without_esx} \
            %{?_without_hyperv} \
            %{?_without_vmware} \
+           %{?_without_parallels} \
            %{?_without_network} \
            %{?_with_rhel5_api} \
            %{?_without_storage_fs} \
@@ -1187,6 +1231,7 @@ autoreconf -if
            %{?_without_storage_disk} \
            %{?_without_storage_mpath} \
            %{?_without_storage_rbd} \
+           %{?_without_storage_sheepdog} \
            %{?_without_numactl} \
            %{?_without_numad} \
            %{?_without_capng} \
@@ -1284,11 +1329,13 @@ rm -fr %{buildroot}
 
 %check
 cd tests
-# These 3 tests don't current work in a mock build root
-for i in nodeinfotest daemon-conf seclabeltest
+make
+# These tests don't current work in a mock build root
+for i in nodeinfotest seclabeltest virdrivermoduletest
 do
   rm -f $i
-  printf "#!/bin/sh\nexit 0\n" > $i
+  printf 'int main(void) { return(0); }' > $i.c
+  printf '#!/bin/sh\nexit 0\n' > $i
   chmod +x $i
 done
 make check
@@ -1369,7 +1416,7 @@ fi
 
 /sbin/chkconfig --add libvirtd
 if [ "$1" -ge "1" ]; then
-	/sbin/service libvirtd condrestart > /dev/null 2>&1
+    /sbin/service libvirtd condrestart > /dev/null 2>&1
 fi
 %endif
 
@@ -1797,6 +1844,10 @@ rm -f $RPM_BUILD_ROOT%{_sysconfdir}/sysctl.d/libvirtd
 %endif
 
 %changelog
+* Wed Aug  8 2012 Daniel Veillard <veillard@redhat.com> - 0.10.0-0rc0
+- snapshot before 0.10.0 in a few weeks
+- adds the parallel driver support
+
 * Mon Jul 23 2012 Richard W.M. Jones <rjones@redhat.com> - 0.9.13-3
 - Add upstream patch to fix RHBZ#842114.
 
