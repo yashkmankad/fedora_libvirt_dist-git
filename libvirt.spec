@@ -309,7 +309,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 0.10.0
-Release: 0rc0%{?dist}%{?extra_release}
+Release: 0rc0.1%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -320,6 +320,7 @@ URL: http://libvirt.org/
 %endif
 Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}-rc0.tar.gz
 Patch0: libvirt-0.10.0-rc0-release-naming.patch
+Patch1: libvirt-build-Link-security-driver-into-daemon.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -1022,6 +1023,7 @@ of recent versions of Linux (and other OSes).
 %prep
 %setup -q
 %patch0 -p1
+%patch1 -p1
 
 %build
 %if ! %{with_xen}
@@ -1844,6 +1846,9 @@ rm -f $RPM_BUILD_ROOT%{_sysconfdir}/sysctl.d/libvirtd
 %endif
 
 %changelog
+* Tue Aug 14 2012 Daniel Veillard <veillard@redhat.com> - 0.10.0-0rc0.1
+- fix security driver missing from the daemon
+
 * Wed Aug  8 2012 Daniel Veillard <veillard@redhat.com> - 0.10.0-0rc0
 - snapshot before 0.10.0 in a few weeks
 - adds the parallel driver support
