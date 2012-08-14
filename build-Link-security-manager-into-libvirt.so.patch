@@ -1,0 +1,115 @@
+From 2f2ca021951905439fbb47ae02d0796837eb4f53 Mon Sep 17 00:00:00 2001
+From: Jiri Denemark <jdenemar@redhat.com>
+Date: Thu, 2 Aug 2012 14:10:31 +0200
+Subject: [PATCH] build: Link security manager into libvirt.so
+
+Security manager is not a dynamically loadable driver, it's a common
+infrastructure similar to util, conf, cpu, etc. used by individual
+drivers. Such code is allowed to be linked into libvirt.so.
+
+This reverts commit ec5b7bd2ecbf40ceff5b2d4fc00d5cfdfba966a4 and most of
+aae5cfb69948fddef556f8f5b9f80a444f9c6125.
+
+This patch is supposed to fix virdrivermoduletest failures for qemu and
+lxc drivers as well as libvirtd's ability to load qemu and lxc drivers.
+---
+ daemon/Makefile.am       |  1 -
+ src/Makefile.am          |  3 +--
+ src/libvirt_private.syms | 31 +++++++++++++++++++++++++++++++
+ tests/Makefile.am        |  5 ++---
+ 4 files changed, 34 insertions(+), 6 deletions(-)
+
+diff --git a/daemon/Makefile.am b/daemon/Makefile.am
+index b8ecbef..928aeaf 100644
+--- a/daemon/Makefile.am
++++ b/daemon/Makefile.am
+@@ -164,7 +164,6 @@ endif
+ if WITH_NWFILTER
+     libvirtd_LDADD += ../src/libvirt_driver_nwfilter.la
+ endif
+-libvirtd_LDADD += ../src/libvirt_driver_security.la
+ endif
+ 
+ libvirtd_LDADD += ../src/libvirt.la
+diff --git a/src/Makefile.am b/src/Makefile.am
+index 844e648..7663ad7 100644
+--- a/src/Makefile.am
++++ b/src/Makefile.am
+@@ -1161,8 +1161,7 @@ endif
+ 
+ libvirt_driver_security_la_SOURCES = $(SECURITY_DRIVER_SOURCES)
+ noinst_LTLIBRARIES += libvirt_driver_security.la
+-# Stateful, so linked to daemon instead
+-#libvirt_la_BUILT_LIBADD += libvirt_driver_security.la
++libvirt_la_BUILT_LIBADD += libvirt_driver_security.la
+ libvirt_driver_security_la_CFLAGS = \
+ 		-I$(top_srcdir)/src/conf $(AM_CFLAGS)
+ libvirt_driver_security_la_LDFLAGS = $(AM_LDFLAGS)
+diff --git a/src/libvirt_private.syms b/src/libvirt_private.syms
+index 0b026b8..aace748 100644
+--- a/src/libvirt_private.syms
++++ b/src/libvirt_private.syms
+@@ -961,6 +961,37 @@ virSecretUsageTypeTypeFromString;
+ virSecretUsageTypeTypeToString;
+ 
+ 
++# security_driver.h
++virSecurityDriverLookup;
++
++
++# security_manager.h
++virSecurityManagerClearSocketLabel;
++virSecurityManagerFree;
++virSecurityManagerGenLabel;
++virSecurityManagerGetDOI;
++virSecurityManagerGetModel;
++virSecurityManagerGetProcessLabel;
++virSecurityManagerNew;
++virSecurityManagerNewStack;
++virSecurityManagerNewDAC;
++virSecurityManagerReleaseLabel;
++virSecurityManagerReserveLabel;
++virSecurityManagerRestoreImageLabel;
++virSecurityManagerRestoreAllLabel;
++virSecurityManagerRestoreHostdevLabel;
++virSecurityManagerRestoreSavedStateLabel;
++virSecurityManagerSetAllLabel;
++virSecurityManagerSetDaemonSocketLabel;
++virSecurityManagerSetImageFDLabel;
++virSecurityManagerSetImageLabel;
++virSecurityManagerSetHostdevLabel;
++virSecurityManagerSetProcessLabel;
++virSecurityManagerSetSavedStateLabel;
++virSecurityManagerSetSocketLabel;
++virSecurityManagerVerify;
++virSecurityManagerGetMountOptions;
++
+ # sexpr.h
+ sexpr_append;
+ sexpr_cons;
+diff --git a/tests/Makefile.am b/tests/Makefile.am
+index 6a1b18b..ac26bc5 100644
+--- a/tests/Makefile.am
++++ b/tests/Makefile.am
+@@ -295,8 +295,7 @@ endif
+ 
+ if WITH_QEMU
+ 
+-qemu_LDADDS = ../src/libvirt_driver_qemu_impl.la \
+-              ../src/libvirt_driver_security.la
++qemu_LDADDS = ../src/libvirt_driver_qemu_impl.la
+ if WITH_NETWORK
+ qemu_LDADDS += ../src/libvirt_driver_network_impl.la
+ endif
+@@ -521,7 +520,7 @@ virauthconfigtest_LDADD = $(LDADDS)
+ 
+ seclabeltest_SOURCES = \
+ 	seclabeltest.c
+-seclabeltest_LDADD = $(LDADDS) ../src/libvirt_driver_security.la
++seclabeltest_LDADD = $(LDADDS)
+ 
+ virbuftest_SOURCES = \
+ 	virbuftest.c testutils.h testutils.c
+-- 
+1.7.11.2
+

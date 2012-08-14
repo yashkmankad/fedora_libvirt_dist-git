@@ -11,7 +11,7 @@
 # Default to skipping autoreconf.  Distros can change just this one line
 # (or provide a command-line override) if they backport any patches that
 # touch configure.ac or Makefile.am.
-%{!?enable_autotools:%define enable_autotools 0}
+%{!?enable_autotools:%define enable_autotools 1}
 
 # A client only build will create a libvirt.so only containing
 # the generic RPC driver, and test driver and no libvirtd
@@ -309,7 +309,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 0.10.0
-Release: 0rc0.1%{?dist}%{?extra_release}
+Release: 0rc0.2%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -321,6 +321,7 @@ URL: http://libvirt.org/
 Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}-rc0.tar.gz
 Patch0: libvirt-0.10.0-rc0-release-naming.patch
 Patch1: libvirt-build-Link-security-driver-into-daemon.patch
+Patch2: build-Link-security-manager-into-libvirt.so.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -1024,6 +1025,7 @@ of recent versions of Linux (and other OSes).
 %setup -q
 %patch0 -p1
 %patch1 -p1
+%patch2 -p1
 
 %build
 %if ! %{with_xen}
@@ -1846,6 +1848,9 @@ rm -f $RPM_BUILD_ROOT%{_sysconfdir}/sysctl.d/libvirtd
 %endif
 
 %changelog
+* Tue Aug 14 2012 Daniel P. Berrange <berrange@redhat.com> - 0.10.0-0rc0.2
+- Enable autotools to make previous patch work
+
 * Tue Aug 14 2012 Daniel Veillard <veillard@redhat.com> - 0.10.0-0rc0.1
 - fix security driver missing from the daemon
 
