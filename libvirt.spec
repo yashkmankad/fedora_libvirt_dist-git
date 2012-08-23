@@ -106,6 +106,7 @@
 %define with_sanlock       0%{!?_without_sanlock:0}
 %define with_systemd       0%{!?_without_systemd:0}
 %define with_numad         0%{!?_without_numad:0}
+%define with_firewalld     0%{!?_without_firewalld:0}
 
 # Non-server/HV driver defaults which are always enabled
 %define with_python        0%{!?_without_python:1}
@@ -144,6 +145,11 @@
 # Fedora has systemd, libvirt still used sysvinit there.
 %if 0%{?fedora} >= 17 || 0%{?rhel} >= 7
 %define with_systemd 1
+%endif
+
+# Fedora 18 / RHEL-7 are first where firewalld support is enabled
+%if 0%{?fedora} >= 17 || 0%{?rhel} >= 7
+%define with_firewalld 1
 %endif
 
 # RHEL-5 has restricted QEMU to x86_64 only and is too old for LXC
@@ -309,7 +315,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 0.10.0
-Release: 0rc0.2%{?dist}%{?extra_release}
+Release: 0rc1%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -318,10 +324,7 @@ URL: http://libvirt.org/
 %if %(echo %{version} | grep -o \\. | wc -l) == 3
 %define mainturl stable_updates/
 %endif
-Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}-rc0.tar.gz
-Patch0: libvirt-0.10.0-rc0-release-naming.patch
-Patch1: libvirt-build-Link-security-driver-into-daemon.patch
-Patch2: build-Link-security-manager-into-libvirt.so.patch
+Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}-rc1.tar.gz
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -1023,9 +1026,6 @@ of recent versions of Linux (and other OSes).
 
 %prep
 %setup -q
-%patch0 -p1
-%patch1 -p1
-%patch2 -p1
 
 %build
 %if ! %{with_xen}
@@ -1192,6 +1192,10 @@ of recent versions of Linux (and other OSes).
 %define _without_driver_modules --without-driver-modules
 %endif
 
+%if %{with_firewalld}
+%define _with_firewalld --with-firewalld
+%endif
+
 %define when  %(date +"%%F-%%T")
 %define where %(hostname)
 %define who   %{?packager}%{!?packager:Unknown}
@@ -1250,6 +1254,7 @@ autoreconf -if
            %{?_without_audit} \
            %{?_without_dtrace} \
            %{?_without_driver_modules} \
+           %{?_with_firewalld} \
            %{with_packager} \
            %{with_packager_version} \
            --with-qemu-user=%{qemu_user} \
@@ -1338,7 +1343,7 @@ make
 for i in nodeinfotest seclabeltest virdrivermoduletest
 do
   rm -f $i
-  printf 'int main(void) { return(0); }' > $i.c
+  printf 'int main(void) { return 0; }' > $i.c
   printf '#!/bin/sh\nexit 0\n' > $i
   chmod +x $i
 done
@@ -1848,6 +1853,9 @@ rm -f $RPM_BUILD_ROOT%{_sysconfdir}/sysctl.d/libvirtd
 %endif
 
 %changelog
+* Thu Aug 23 2012 Daniel Veillard <veillard@redhat.com> - 0.10.0-0rc1
+- release candidate 1 of 0.10.0
+
 * Tue Aug 14 2012 Daniel P. Berrange <berrange@redhat.com> - 0.10.0-0rc0.2
 - Enable autotools to make previous patch work
 
