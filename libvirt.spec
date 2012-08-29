@@ -11,7 +11,7 @@
 # Default to skipping autoreconf.  Distros can change just this one line
 # (or provide a command-line override) if they backport any patches that
 # touch configure.ac or Makefile.am.
-%{!?enable_autotools:%define enable_autotools 1}
+%{!?enable_autotools:%define enable_autotools 0}
 
 # A client only build will create a libvirt.so only containing
 # the generic RPC driver, and test driver and no libvirtd
@@ -315,7 +315,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 0.10.0
-Release: 0rc1%{?dist}%{?extra_release}
+Release: 1%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -324,7 +324,7 @@ URL: http://libvirt.org/
 %if %(echo %{version} | grep -o \\. | wc -l) == 3
 %define mainturl stable_updates/
 %endif
-Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}-rc1.tar.gz
+Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -409,7 +409,11 @@ BuildRequires: sanlock-devel >= 1.8
 BuildRequires: libpcap-devel
 %endif
 %if %{with_libnl}
+%if 0%{?fedora} >= 18 || 0%{?rhel} >= 7
+BuildRequires: libnl3-devel
+%else
 BuildRequires: libnl-devel
+%endif
 %endif
 %if %{with_avahi}
 BuildRequires: avahi-devel
@@ -477,10 +481,6 @@ BuildRequires: device-mapper-devel
 %endif
 %if %{with_storage_rbd}
 BuildRequires: ceph-devel
-# XXX: Fedora only change, needed for building 0.9.13 on F17. Can
-#      be dropped 0.9.14 when this patch should be applied:
-# https://www.redhat.com/archives/libvir-list/2012-July/msg00634.html
-BuildRequires: openssl-devel
 %endif
 %endif
 %if %{with_numactl}
@@ -493,11 +493,16 @@ BuildRequires: libcap-ng-devel >= 0.5.0
 %if %{with_phyp}
 BuildRequires: libssh2-devel
 %endif
+
 %if %{with_netcf}
+%if 0%{?fedora} >= 18 || 0%{?rhel} >= 7
+BuildRequires: netcf-devel >= 0.2.2
+%else
 %if 0%{?fedora} >= 16 || 0%{?rhel} >= 6
 BuildRequires: netcf-devel >= 0.1.8
 %else
 BuildRequires: netcf-devel >= 0.1.4
+%endif
 %endif
 %endif
 %if %{with_esx}
@@ -1345,7 +1350,7 @@ rm -fr %{buildroot}
 cd tests
 make
 # These tests don't current work in a mock build root
-for i in nodeinfotest seclabeltest virdrivermoduletest
+for i in nodeinfotest seclabeltest
 do
   rm -f $i
   printf 'int main(void) { return 0; }' > $i.c
@@ -1858,6 +1863,18 @@ rm -f $RPM_BUILD_ROOT%{_sysconfdir}/sysctl.d/libvirtd
 %endif
 
 %changelog
+* Wed Aug 29 2012 Daniel Veillard <veillard@redhat.com> - 0.10.0-1
+- upstream release of 0.10.0
+- agent: add qemuAgentArbitraryCommand() for general qemu agent command
+- Introduce virDomainPinEmulator and virDomainGetEmulatorPinInfo functions
+- network: use firewalld instead of iptables, when available
+- network: make network driver vlan-aware
+- esx: Implement network driver
+- driver for parallels hypervisor
+- Various LXC improvements
+- Add virDomainGetHostname
+- a lot of bug fixes, improvements and portability work
+
 * Thu Aug 23 2012 Daniel Veillard <veillard@redhat.com> - 0.10.0-0rc1
 - release candidate 1 of 0.10.0
 
