@@ -315,7 +315,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 0.10.1
-Release: 1%{?dist}%{?extra_release}
+Release: 2%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -648,10 +648,6 @@ Requires: device-mapper
 %if %{with_storage_mpath}
 # For multipath support
 Requires: device-mapper
-%endif
-%if %{with_storage_rbd}
-# For RBD support
-Requires: ceph
 %endif
 %if %{with_storage_sheepdog}
 # For Sheepdog support
@@ -1863,6 +1859,9 @@ rm -f $RPM_BUILD_ROOT%{_sysconfdir}/sysctl.d/libvirtd
 %endif
 
 %changelog
+* Wed Sep  5 2012 Daniel P. Berrange <berrange@redhat.com> - 0.10.1-2
+- Remove dep on ceph RPM (rhbz #854360)
+
 * Fri Aug 31 2012 Daniel Veillard <veillard@redhat.com> - 0.10.1-1
 - upstream release of 0.10.1
 - many fixes from 0.10.0
