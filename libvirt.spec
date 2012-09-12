@@ -315,7 +315,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 0.10.1
-Release: 2%{?dist}%{?extra_release}
+Release: 3%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -325,6 +325,10 @@ URL: http://libvirt.org/
 %define mainturl stable_updates/
 %endif
 Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
+# Drop unneeded dnsmasq --filterwin2k
+Patch1: %{name}-dnsmasq-drop-filterwin2k.patch
+# Fix unwanted connection closing, needed for boxes
+Patch2: %{name}-fix-unwanted-connection-closing.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -588,6 +592,9 @@ Requires: iptables-ipv6
 %endif
 %if %{with_nwfilter}
 Requires: ebtables
+%endif
+%if %{with_netcf} && (0%{?fedora} >= 18 || 0%{?rhel} >= 7)
+Requires: netcf-libs >= 0.2.2
 %endif
 # needed for device enumeration
 %if %{with_hal}
@@ -1032,6 +1039,8 @@ of recent versions of Linux (and other OSes).
 
 %prep
 %setup -q
+%patch1 -p1
+%patch2 -p1
 
 %build
 %if ! %{with_xen}
@@ -1859,6 +1868,11 @@ rm -f $RPM_BUILD_ROOT%{_sysconfdir}/sysctl.d/libvirtd
 %endif
 
 %changelog
+* Wed Sep 12 2012 Cole Robinson <crobinso@redhat.com> - 0.10.1-3
+- Fix libvirtd segfault with old netcf-libs (bz 853381)
+- Drop unneeded dnsmasq --filterwin2k
+- Fix unwanted connection closing, needed for boxes
+
 * Wed Sep  5 2012 Daniel P. Berrange <berrange@redhat.com> - 0.10.1-2
 - Remove dep on ceph RPM (rhbz #854360)
 
