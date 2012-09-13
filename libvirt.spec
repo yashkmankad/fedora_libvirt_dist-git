@@ -315,7 +315,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 0.10.1
-Release: 3%{?dist}%{?extra_release}
+Release: 4%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -329,6 +329,8 @@ Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
 Patch1: %{name}-dnsmasq-drop-filterwin2k.patch
 # Fix unwanted connection closing, needed for boxes
 Patch2: %{name}-fix-unwanted-connection-closing.patch
+# Fix qemu -> qemu-system-i386 (RHBZ#857026).
+Patch3: 0001-Use-qemu-system-i386-as-binary-instead-of-qemu.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -1041,6 +1043,7 @@ of recent versions of Linux (and other OSes).
 %setup -q
 %patch1 -p1
 %patch2 -p1
+%patch3 -p1
 
 %build
 %if ! %{with_xen}
@@ -1868,6 +1871,9 @@ rm -f $RPM_BUILD_ROOT%{_sysconfdir}/sysctl.d/libvirtd
 %endif
 
 %changelog
+* Thu Sep 13 2012 Richard W.M. Jones <rjones@redhat.com> - 0.10.1-4
+- Fix for 32 bit qemu renamed to qemu-system-i386 (RHBZ#857026).
+
 * Wed Sep 12 2012 Cole Robinson <crobinso@redhat.com> - 0.10.1-3
 - Fix libvirtd segfault with old netcf-libs (bz 853381)
 - Drop unneeded dnsmasq --filterwin2k
