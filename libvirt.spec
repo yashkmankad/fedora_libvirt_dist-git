@@ -315,7 +315,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 0.10.1
-Release: 4%{?dist}%{?extra_release}
+Release: 5%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -331,6 +331,9 @@ Patch1: %{name}-dnsmasq-drop-filterwin2k.patch
 Patch2: %{name}-fix-unwanted-connection-closing.patch
 # Fix qemu -> qemu-system-i386 (RHBZ#857026).
 Patch3: 0001-Use-qemu-system-i386-as-binary-instead-of-qemu.patch
+# Upstream patches to label sockets for SELinux (RHBZ#853393).
+Patch4: 0001-Make-virSecurityDeviceLabelDefParseXML-into-generic-.patch
+Patch5: 0002-Add-seclabel-to-character-devices.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -1044,6 +1047,8 @@ of recent versions of Linux (and other OSes).
 %patch1 -p1
 %patch2 -p1
 %patch3 -p1
+%patch4 -p1
+%patch5 -p1
 
 %build
 %if ! %{with_xen}
@@ -1871,6 +1876,9 @@ rm -f $RPM_BUILD_ROOT%{_sysconfdir}/sysctl.d/libvirtd
 %endif
 
 %changelog
+* Fri Sep 21 2012 Richard W.M. Jones <rjones@redhat.com> - 0.10.1-5
+- Add (upstream) patches to label sockets for SELinux (RHBZ#853393).
+
 * Thu Sep 13 2012 Richard W.M. Jones <rjones@redhat.com> - 0.10.1-4
 - Fix for 32 bit qemu renamed to qemu-system-i386 (RHBZ#857026).
 

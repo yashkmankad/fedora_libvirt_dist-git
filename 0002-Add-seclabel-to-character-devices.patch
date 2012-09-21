@@ -1,0 +1,440 @@
+From f8b08d0e961c7e10d87ee011ec7bf1f8fe7b1fbb Mon Sep 17 00:00:00 2001
+From: "Richard W.M. Jones" <rjones@redhat.com>
+Date: Thu, 20 Sep 2012 14:16:17 +0100
+Subject: [PATCH 2/2] Add <seclabel> to character devices.
+
+This allows the user to control labelling of each character device
+separately (the default is to inherit from the VM).
+
+Signed-off-by: Richard W.M. Jones <rjones@redhat.com>
+---
+ docs/formatdomain.html.in       |  8 ++++
+ docs/schemas/domaincommon.rng   |  3 ++
+ src/conf/domain_conf.c          | 78 +++++++++++++++++++++++++++++++++--
+ src/conf/domain_conf.h          |  6 +++
+ src/security/security_selinux.c | 90 +++++++++++++++++++++++++++++------------
+ 5 files changed, 155 insertions(+), 30 deletions(-)
+
+
+diff -ur libvirt-0.10.1.old/docs/formatdomain.html.in libvirt-0.10.1/docs/formatdomain.html.in
+--- libvirt-0.10.1.old/docs/formatdomain.html.in	2012-08-31 11:01:18.000000000 +0100
++++ libvirt-0.10.1/docs/formatdomain.html.in	2012-09-21 18:46:30.795973766 +0100
+@@ -3369,6 +3369,14 @@
+     </p>
+ 
+     <p>
++      The <code>source</code> element may contain an optional
++      <code>seclabel</code> to override the way that labelling
++      is done on the socket path.  If this element is not present,
++      the <a href="#seclabel">security label is inherited from
++        the per-domain setting</a>.
++    </p>
++
++    <p>
+       Each character device element has an optional
+       sub-element <code>&lt;address&gt;</code> which can tie the
+       device to a
+diff -ur libvirt-0.10.1.old/docs/schemas/domaincommon.rng libvirt-0.10.1/docs/schemas/domaincommon.rng
+--- libvirt-0.10.1.old/docs/schemas/domaincommon.rng	2012-08-22 10:05:18.000000000 +0100
++++ libvirt-0.10.1/docs/schemas/domaincommon.rng	2012-09-21 18:46:30.802973900 +0100
+@@ -2344,6 +2344,9 @@
+         <optional>
+           <attribute name="wiremode"/>
+         </optional>
++        <optional>
++          <ref name='devSeclabel'/>
++        </optional>
+       </element>
+     </zeroOrMore>
+     <optional>
+diff -ur libvirt-0.10.1.old/src/conf/domain_conf.c libvirt-0.10.1/src/conf/domain_conf.c
+--- libvirt-0.10.1.old/src/conf/domain_conf.c	2012-09-21 18:46:07.045533923 +0100
++++ libvirt-0.10.1/src/conf/domain_conf.c	2012-09-21 18:47:34.781159182 +0100
+@@ -1257,6 +1257,8 @@
+ 
+ void virDomainChrDefFree(virDomainChrDefPtr def)
+ {
++    size_t i;
++
+     if (!def)
+         return;
+ 
+@@ -1280,6 +1282,12 @@
+     virDomainChrSourceDefClear(&def->source);
+     virDomainDeviceInfoClear(&def->info);
+ 
++    if (def->seclabels) {
++        for (i = 0; i < def->nseclabels; i++)
++            virSecurityDeviceLabelDefFree(def->seclabels[i]);
++        VIR_FREE(def->seclabels);
++    }
++
+     VIR_FREE(def);
+ }
+ 
+@@ -5264,7 +5272,11 @@
+  * <target>, which is used by <serial> but not <smartcard>). */
+ static int
+ virDomainChrSourceDefParseXML(virDomainChrSourceDefPtr def,
+-                              xmlNodePtr cur, unsigned int flags)
++                              xmlNodePtr cur, unsigned int flags,
++                              virDomainChrDefPtr chr_def,
++                              xmlXPathContextPtr ctxt,
++                              virSecurityLabelDefPtr* vmSeclabels,
++                              int nvmSeclabels)
+ {
+     char *bindHost = NULL;
+     char *bindService = NULL;
+@@ -5319,6 +5331,21 @@
+                     if (def->type == VIR_DOMAIN_CHR_TYPE_UDP)
+                         VIR_FREE(mode);
+                 }
++
++                /* Check for an optional seclabel override in <source/>. */
++                if (chr_def) {
++                    xmlNodePtr saved_node = ctxt->node;
++                    ctxt->node = cur;
++                    if (virSecurityDeviceLabelDefParseXML(&chr_def->seclabels,
++                                                          &chr_def->nseclabels,
++                                                          vmSeclabels,
++                                                          nvmSeclabels,
++                                                          ctxt) < 0) {
++                        ctxt->node = saved_node;
++                        goto error;
++                    }
++                    ctxt->node = saved_node;
++                }
+             } else if (xmlStrEqual(cur->name, BAD_CAST "protocol")) {
+                 if (protocol == NULL)
+                     protocol = virXMLPropString(cur, "type");
+@@ -5512,7 +5539,10 @@
+ static virDomainChrDefPtr
+ virDomainChrDefParseXML(virCapsPtr caps,
+                         virDomainDefPtr vmdef,
++                        xmlXPathContextPtr ctxt,
+                         xmlNodePtr node,
++                        virSecurityLabelDefPtr* vmSeclabels,
++                        int nvmSeclabels,
+                         unsigned int flags)
+ {
+     xmlNodePtr cur;
+@@ -5543,7 +5573,9 @@
+     }
+ 
+     cur = node->children;
+-    remaining = virDomainChrSourceDefParseXML(&def->source, cur, flags);
++    remaining = virDomainChrSourceDefParseXML(&def->source, cur, flags,
++                                              def, ctxt,
++                                              vmSeclabels, nvmSeclabels);
+     if (remaining < 0)
+         goto error;
+     if (remaining) {
+@@ -5680,7 +5712,8 @@
+         }
+ 
+         cur = node->children;
+-        if (virDomainChrSourceDefParseXML(&def->data.passthru, cur, flags) < 0)
++        if (virDomainChrSourceDefParseXML(&def->data.passthru, cur, flags,
++                                          NULL, NULL, NULL, 0) < 0)
+             goto error;
+ 
+         if (def->data.passthru.type == VIR_DOMAIN_CHR_TYPE_SPICEVMC) {
+@@ -7161,7 +7194,8 @@
+             if (xmlStrEqual(cur->name, BAD_CAST "source")) {
+                 int remaining;
+ 
+-                remaining = virDomainChrSourceDefParseXML(&def->source.chr, cur, flags);
++                remaining = virDomainChrSourceDefParseXML(&def->source.chr, cur, flags,
++                                                          NULL, NULL, NULL, 0);
+                 if (remaining != 0)
+                     goto error;
+             }
+@@ -8974,7 +9008,10 @@
+     for (i = 0 ; i < n ; i++) {
+         virDomainChrDefPtr chr = virDomainChrDefParseXML(caps,
+                                                          def,
++                                                         ctxt,
+                                                          nodes[i],
++                                                         def->seclabels,
++                                                         def->nseclabels,
+                                                          flags);
+         if (!chr)
+             goto error;
+@@ -9001,7 +9038,10 @@
+     for (i = 0 ; i < n ; i++) {
+         virDomainChrDefPtr chr = virDomainChrDefParseXML(caps,
+                                                          def,
++                                                         ctxt,
+                                                          nodes[i],
++                                                         def->seclabels,
++                                                         def->nseclabels,
+                                                          flags);
+         if (!chr)
+             goto error;
+@@ -9031,7 +9071,10 @@
+         bool create_stub = true;
+         virDomainChrDefPtr chr = virDomainChrDefParseXML(caps,
+                                                          def,
++                                                         ctxt,
+                                                          nodes[i],
++                                                         def->seclabels,
++                                                         def->nseclabels,
+                                                          flags);
+         if (!chr)
+             goto error;
+@@ -9107,7 +9150,10 @@
+     for (i = 0 ; i < n ; i++) {
+         virDomainChrDefPtr chr = virDomainChrDefParseXML(caps,
+                                                          def,
++                                                         ctxt,
+                                                          nodes[i],
++                                                         def->seclabels,
++                                                         def->nseclabels,
+                                                          flags);
+         if (!chr)
+             goto error;
+@@ -12188,6 +12234,7 @@
+     const char *targetType = virDomainChrTargetTypeToString(def->deviceType,
+                                                             def->targetType);
+     bool tty_compat;
++    size_t n;
+ 
+     int ret = 0;
+ 
+@@ -12267,6 +12314,14 @@
+             return -1;
+     }
+ 
++    /* Security label overrides, if any. */
++    if (def->seclabels && def->nseclabels > 0) {
++        virBufferAdjustIndent(buf, 2);
++        for (n = 0; n < def->nseclabels; n++)
++            virSecurityDeviceLabelDefFormat(buf, def->seclabels[n]);
++        virBufferAdjustIndent(buf, -2);
++    }
++
+     virBufferAsprintf(buf, "    </%s>\n", elementName);
+ 
+     return ret;
+@@ -15032,6 +15087,21 @@
+ {
+     int i;
+ 
++    if (def == NULL)
++        return NULL;
++
++    for (i = 0; i < def->nseclabels; i++) {
++        if (STREQ_NULLABLE(def->seclabels[i]->model, model))
++            return def->seclabels[i];
++    }
++    return NULL;
++}
++
++virSecurityDeviceLabelDefPtr
++virDomainChrDefGetSecurityLabelDef(virDomainChrDefPtr def, const char *model)
++{
++    int i;
++
+     if (def == NULL)
+         return NULL;
+ 
+diff -ur libvirt-0.10.1.old/src/conf/domain_conf.h libvirt-0.10.1/src/conf/domain_conf.h
+--- libvirt-0.10.1.old/src/conf/domain_conf.h	2012-08-31 13:14:44.000000000 +0100
++++ libvirt-0.10.1/src/conf/domain_conf.h	2012-09-21 18:46:30.832974475 +0100
+@@ -953,6 +953,9 @@
+     virDomainChrSourceDef source;
+ 
+     virDomainDeviceInfo info;
++
++    size_t nseclabels;
++    virSecurityDeviceLabelDefPtr *seclabels;
+ };
+ 
+ enum virDomainSmartcardType {
+@@ -2074,6 +2077,9 @@
+ virSecurityDeviceLabelDefPtr
+ virDomainDiskDefGetSecurityLabelDef(virDomainDiskDefPtr def, const char *model);
+ 
++virSecurityDeviceLabelDefPtr
++virDomainChrDefGetSecurityLabelDef(virDomainChrDefPtr def, const char *model);
++
+ virSecurityLabelDefPtr
+ virDomainDefAddSecurityLabelDef(virDomainDefPtr def, const char *model);
+ 
+diff -ur libvirt-0.10.1.old/src/security/security_selinux.c libvirt-0.10.1/src/security/security_selinux.c
+--- libvirt-0.10.1.old/src/security/security_selinux.c	2012-08-22 04:19:44.000000000 +0100
++++ libvirt-0.10.1/src/security/security_selinux.c	2012-09-21 18:46:30.834974513 +0100
+@@ -1213,38 +1213,61 @@
+ 
+ static int
+ virSecuritySELinuxSetSecurityChardevLabel(virDomainDefPtr def,
+-                                          virDomainChrSourceDefPtr dev)
++                                          virDomainChrDefPtr dev,
++                                          virDomainChrSourceDefPtr dev_source)
+ 
+ {
+-    virSecurityLabelDefPtr secdef;
++    virSecurityLabelDefPtr seclabel;
++    virSecurityDeviceLabelDefPtr chr_seclabel = NULL;
++    char *imagelabel = NULL;
+     char *in = NULL, *out = NULL;
+     int ret = -1;
+ 
+-    secdef = virDomainDefGetSecurityLabelDef(def, SECURITY_SELINUX_NAME);
+-    if (secdef == NULL)
++    seclabel = virDomainDefGetSecurityLabelDef(def, SECURITY_SELINUX_NAME);
++    if (seclabel == NULL)
+         return -1;
+ 
+-    if (secdef->norelabel)
++    if (dev)
++        chr_seclabel = virDomainChrDefGetSecurityLabelDef(dev,
++                                                          SECURITY_SELINUX_NAME);
++
++    if (seclabel->norelabel || (chr_seclabel && chr_seclabel->norelabel))
+         return 0;
+ 
+-    switch (dev->type) {
++    if (chr_seclabel)
++        imagelabel = chr_seclabel->label;
++    if (!imagelabel)
++        imagelabel = seclabel->imagelabel;
++
++    switch (dev_source->type) {
+     case VIR_DOMAIN_CHR_TYPE_DEV:
+     case VIR_DOMAIN_CHR_TYPE_FILE:
+-        ret = virSecuritySELinuxSetFilecon(dev->data.file.path, secdef->imagelabel);
++        ret = virSecuritySELinuxSetFilecon(dev_source->data.file.path,
++                                           imagelabel);
++        break;
++
++    case VIR_DOMAIN_CHR_TYPE_UNIX:
++        if (!dev_source->data.nix.listen) {
++            if (virSecuritySELinuxSetFilecon(dev_source->data.file.path,
++                                             imagelabel) < 0)
++                goto done;
++        }
++        ret = 0;
+         break;
+ 
+     case VIR_DOMAIN_CHR_TYPE_PIPE:
+-        if ((virAsprintf(&in, "%s.in", dev->data.file.path) < 0) ||
+-            (virAsprintf(&out, "%s.out", dev->data.file.path) < 0)) {
++        if ((virAsprintf(&in, "%s.in", dev_source->data.file.path) < 0) ||
++            (virAsprintf(&out, "%s.out", dev_source->data.file.path) < 0)) {
+             virReportOOMError();
+             goto done;
+         }
+         if (virFileExists(in) && virFileExists(out)) {
+-            if ((virSecuritySELinuxSetFilecon(in, secdef->imagelabel) < 0) ||
+-                (virSecuritySELinuxSetFilecon(out, secdef->imagelabel) < 0)) {
++            if ((virSecuritySELinuxSetFilecon(in, imagelabel) < 0) ||
++                (virSecuritySELinuxSetFilecon(out, imagelabel) < 0)) {
+                 goto done;
+             }
+-        } else if (virSecuritySELinuxSetFilecon(dev->data.file.path, secdef->imagelabel) < 0) {
++        } else if (virSecuritySELinuxSetFilecon(dev_source->data.file.path,
++                                                imagelabel) < 0) {
+             goto done;
+         }
+         ret = 0;
+@@ -1263,30 +1286,44 @@
+ 
+ static int
+ virSecuritySELinuxRestoreSecurityChardevLabel(virDomainDefPtr def,
+-                                              virDomainChrSourceDefPtr dev)
++                                              virDomainChrDefPtr dev,
++                                              virDomainChrSourceDefPtr dev_source)
+ 
+ {
+-    virSecurityLabelDefPtr secdef;
++    virSecurityLabelDefPtr seclabel;
++    virSecurityDeviceLabelDefPtr chr_seclabel = NULL;
+     char *in = NULL, *out = NULL;
+     int ret = -1;
+ 
+-    secdef = virDomainDefGetSecurityLabelDef(def, SECURITY_SELINUX_NAME);
+-    if (secdef == NULL)
++    seclabel = virDomainDefGetSecurityLabelDef(def, SECURITY_SELINUX_NAME);
++    if (seclabel == NULL)
+         return -1;
+ 
+-    if (secdef->norelabel)
++    if (dev)
++        chr_seclabel = virDomainChrDefGetSecurityLabelDef(dev,
++                                                          SECURITY_SELINUX_NAME);
++    if (seclabel->norelabel || (chr_seclabel && chr_seclabel->norelabel))
+         return 0;
+ 
+-    switch (dev->type) {
++    switch (dev_source->type) {
+     case VIR_DOMAIN_CHR_TYPE_DEV:
+     case VIR_DOMAIN_CHR_TYPE_FILE:
+-        if (virSecuritySELinuxRestoreSecurityFileLabel(dev->data.file.path) < 0)
++        if (virSecuritySELinuxRestoreSecurityFileLabel(dev_source->data.file.path) < 0)
+             goto done;
+         ret = 0;
+         break;
++
++    case VIR_DOMAIN_CHR_TYPE_UNIX:
++        if (!dev_source->data.nix.listen) {
++            if (virSecuritySELinuxRestoreSecurityFileLabel(dev_source->data.file.path) < 0)
++                goto done;
++        }
++        ret = 0;
++        break;
++
+     case VIR_DOMAIN_CHR_TYPE_PIPE:
+-        if ((virAsprintf(&out, "%s.out", dev->data.file.path) < 0) ||
+-            (virAsprintf(&in, "%s.in", dev->data.file.path) < 0)) {
++        if ((virAsprintf(&out, "%s.out", dev_source->data.file.path) < 0) ||
++            (virAsprintf(&in, "%s.in", dev_source->data.file.path) < 0)) {
+             virReportOOMError();
+             goto done;
+         }
+@@ -1295,7 +1332,7 @@
+                 (virSecuritySELinuxRestoreSecurityFileLabel(in) < 0)) {
+                 goto done;
+             }
+-        } else if (virSecuritySELinuxRestoreSecurityFileLabel(dev->data.file.path) < 0) {
++        } else if (virSecuritySELinuxRestoreSecurityFileLabel(dev_source->data.file.path) < 0) {
+             goto done;
+         }
+         ret = 0;
+@@ -1323,7 +1360,8 @@
+         dev->targetType == VIR_DOMAIN_CHR_CONSOLE_TARGET_TYPE_SERIAL)
+         return 0;
+ 
+-    return virSecuritySELinuxRestoreSecurityChardevLabel(def, &dev->source);
++    return virSecuritySELinuxRestoreSecurityChardevLabel(def, dev,
++                                                         &dev->source);
+ }
+ 
+ 
+@@ -1345,7 +1383,7 @@
+         return virSecuritySELinuxRestoreSecurityFileLabel(database);
+ 
+     case VIR_DOMAIN_SMARTCARD_TYPE_PASSTHROUGH:
+-        return virSecuritySELinuxRestoreSecurityChardevLabel(def, &dev->data.passthru);
++        return virSecuritySELinuxRestoreSecurityChardevLabel(def, NULL, &dev->data.passthru);
+ 
+     default:
+         virReportError(VIR_ERR_INTERNAL_ERROR,
+@@ -1703,7 +1741,7 @@
+         dev->targetType == VIR_DOMAIN_CHR_CONSOLE_TARGET_TYPE_SERIAL)
+         return 0;
+ 
+-    return virSecuritySELinuxSetSecurityChardevLabel(def, &dev->source);
++    return virSecuritySELinuxSetSecurityChardevLabel(def, dev, &dev->source);
+ }
+ 
+ 
+@@ -1727,7 +1765,7 @@
+         return virSecuritySELinuxSetFilecon(database, data->content_context);
+ 
+     case VIR_DOMAIN_SMARTCARD_TYPE_PASSTHROUGH:
+-        return virSecuritySELinuxSetSecurityChardevLabel(def, &dev->data.passthru);
++        return virSecuritySELinuxSetSecurityChardevLabel(def, NULL, &dev->data.passthru);
+ 
+     default:
+         virReportError(VIR_ERR_INTERNAL_ERROR,
