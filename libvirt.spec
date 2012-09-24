@@ -316,7 +316,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 0.10.2
-Release: 2%{?dist}%{?extra_release}
+Release: 3%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -330,6 +330,11 @@ Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
 # Fix qemu -> qemu-system-i386 (RHBZ#857026).
 # NB: This patch is Fedora-specific and not upstream.
 Patch1: 0001-Use-qemu-system-i386-as-binary-instead-of-qemu.patch
+
+# Don't duplicate environment variables
+# (RHBZ#859596, upstream after 0.10.2).
+Patch2: 0001-command-Move-environ-adding-code-to-common-function-.patch
+Patch3: 0002-command-Change-virCommandAddEnv-so-it-replaces-exist.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -1041,6 +1046,8 @@ of recent versions of Linux (and other OSes).
 %prep
 %setup -q
 %patch1 -p1
+%patch2 -p1
+%patch3 -p1
 
 %build
 %if ! %{with_xen}
@@ -1884,9 +1891,10 @@ rm -f $RPM_BUILD_ROOT%{_sysconfdir}/sysctl.d/libvirtd
 %endif
 
 %changelog
-* Mon Sep 24 2012 Daniel Veillard <veillard@redhat.com> - 0.10.2-2
+* Mon Sep 24 2012 Richard W.M. Jones <rjones@redhat.com> - 0.10.2-3
 - Re-add 0001-Use-qemu-system-i386-as-binary-instead-of-qemu.patch
   NB: This patch is Fedora-specific and not upstream.
+- Add upstream patches: don't duplicate environment variables (RHBZ#859596).
 
 * Mon Sep 24 2012 Daniel Veillard <veillard@redhat.com> - 0.10.2-1
 - Upstream release 0.10.2
