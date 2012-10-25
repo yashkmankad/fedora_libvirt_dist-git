@@ -294,6 +294,10 @@
 %define with_storage 0
 %endif
 
+# libxl driver doesn't build with Xen 4.2 in rawhide
+%if 0%{?fedora} && 0%{?fedora} >= 19
+%define with_libxl 0
+%endif
 
 # Force QEMU to run as non-root
 %if 0%{?fedora} >= 12 || 0%{?rhel} >= 6
@@ -316,7 +320,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 0.10.2
-Release: 3%{?dist}%{?extra_release}
+Release: 4%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -682,6 +686,11 @@ Requires(postun): systemd-units
 %endif
 %if %{with_numad}
 Requires: numad
+%endif
+
+# libxl driver doesn't build with Xen 4.2 in rawhide
+%if ! %{with_libxl}
+Obsoletes: libvirt-daemon-driver-libxl
 %endif
 
 %description daemon
@@ -1891,6 +1900,9 @@ rm -f $RPM_BUILD_ROOT%{_sysconfdir}/sysctl.d/libvirtd
 %endif
 
 %changelog
+* Thu Oct 25 2012 Cole Robinson <crobinso@redhat.com> - 0.10.2-4
+- Disable libxl driver, since it doesn't build with xen 4.2 in rawhide
+
 * Mon Sep 24 2012 Richard W.M. Jones <rjones@redhat.com> - 0.10.2-3
 - Re-add 0001-Use-qemu-system-i386-as-binary-instead-of-qemu.patch
   NB: This patch is Fedora-specific and not upstream.
