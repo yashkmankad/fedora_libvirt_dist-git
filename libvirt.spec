@@ -319,8 +319,8 @@
 
 Summary: Library providing a simple virtualization API
 Name: libvirt
-Version: 0.10.2
-Release: 4%{?dist}%{?extra_release}
+Version: 0.10.2.1
+Release: 1%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -330,15 +330,11 @@ URL: http://libvirt.org/
 %define mainturl stable_updates/
 %endif
 Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
-
 # Fix qemu -> qemu-system-i386 (RHBZ#857026).
-# NB: This patch is Fedora-specific and not upstream.
+# keep: This patch is Fedora-specific and not upstream.
 Patch1: 0001-Use-qemu-system-i386-as-binary-instead-of-qemu.patch
 
-# Don't duplicate environment variables
-# (RHBZ#859596, upstream after 0.10.2).
-Patch2: 0001-command-Move-environ-adding-code-to-common-function-.patch
-Patch3: 0002-command-Change-virCommandAddEnv-so-it-replaces-exist.patch
+
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -1055,8 +1051,6 @@ of recent versions of Linux (and other OSes).
 %prep
 %setup -q
 %patch1 -p1
-%patch2 -p1
-%patch3 -p1
 
 %build
 %if ! %{with_xen}
@@ -1378,6 +1372,15 @@ mv $RPM_BUILD_ROOT%{_datadir}/doc/libvirt-%{version} \
    $RPM_BUILD_ROOT%{_datadir}/doc/libvirt-docs-%{version}
 
 sed -i -e "s|$RPM_BUILD_ROOT||g" $RPM_BUILD_ROOT%{_sysconfdir}/rc.d/init.d/libvirt-guests
+
+%if %{with_dtrace}
+%ifarch %{power64} s390x x86_64 ia64 alpha sparc64
+mv $RPM_BUILD_ROOT%{_datadir}/systemtap/tapset/libvirt_probes.stp \
+   $RPM_BUILD_ROOT%{_datadir}/systemtap/tapset/libvirt_probes-64.stp
+mv $RPM_BUILD_ROOT%{_datadir}/systemtap/tapset/libvirt_qemu_probes.stp \
+   $RPM_BUILD_ROOT%{_datadir}/systemtap/tapset/libvirt_qemu_probes-64.stp
+%endif
+%endif
 
 %clean
 rm -fr %{buildroot}
@@ -1827,8 +1830,8 @@ rm -f $RPM_BUILD_ROOT%{_sysconfdir}/sysctl.d/libvirtd
 %{_libdir}/lib*.so.*
 
 %if %{with_dtrace}
-%{_datadir}/systemtap/tapset/libvirt_probes.stp
-%{_datadir}/systemtap/tapset/libvirt_qemu_probes.stp
+%{_datadir}/systemtap/tapset/libvirt_probes*.stp
+%{_datadir}/systemtap/tapset/libvirt_qemu_probes*.stp
 %{_datadir}/systemtap/tapset/libvirt_functions.stp
 %endif
 
@@ -1900,11 +1903,23 @@ rm -f $RPM_BUILD_ROOT%{_sysconfdir}/sysctl.d/libvirtd
 %endif
 
 %changelog
+* Sat Oct 27 2012 Cole Robinson <crobinso@redhat.com> - 0.10.2.1-1
+- Rebased to version 0.10.2.1
+- Fix lvm volume creation when alloc=0 (bz #866481)
+- Clarify virsh send-keys man page example (bz #860004)
+- Fix occasional deadlock via virDomainDestroy (bz #859009)
+- Fix LXC deadlock from ctrl-c (bz #848119)
+- Fix occasional selinux denials with macvtap (bz #798605)
+- Fix multilib conflict with systemtap files (bz #831425)
+- Don't trigger keytab warning in system logs (bz #745203)
+- Fix qemu domxml-2-native NIC model out (bz #636832)
+- Fix error message if not enough space for lvm vol (bz #609104)
+
 * Thu Oct 25 2012 Cole Robinson <crobinso@redhat.com> - 0.10.2-4
 - Disable libxl driver, since it doesn't build with xen 4.2 in rawhide
 
 * Mon Sep 24 2012 Richard W.M. Jones <rjones@redhat.com> - 0.10.2-3
-- Re-add 0001-Use-qemu-system-i386-as-binary-instead-of-qemu.patch
+- Re-add Use-qemu-system-i386-as-binary-instead-of-qemu.patch
   NB: This patch is Fedora-specific and not upstream.
 - Add upstream patches: don't duplicate environment variables (RHBZ#859596).
 
