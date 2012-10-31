@@ -295,7 +295,7 @@
 %endif
 
 # libxl driver doesn't build with Xen 4.2 in rawhide
-%if 0%{?fedora} && 0%{?fedora} >= 19
+%if 0%{?fedora} && 0%{?fedora} >= 18
 %define with_libxl 0
 %endif
 
@@ -320,7 +320,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 0.10.2.1
-Release: 1%{?dist}%{?extra_release}
+Release: 2%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -1903,6 +1903,9 @@ rm -f $RPM_BUILD_ROOT%{_sysconfdir}/sysctl.d/libvirtd
 %endif
 
 %changelog
+* Tue Oct 30 2012 Cole Robinson <crobinso@redhat.com> - 0.10.2.1-2
+- Disable libxl on F18 too
+
 * Sat Oct 27 2012 Cole Robinson <crobinso@redhat.com> - 0.10.2.1-1
 - Rebased to version 0.10.2.1
 - Fix lvm volume creation when alloc=0 (bz #866481)
