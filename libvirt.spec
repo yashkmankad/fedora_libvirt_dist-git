@@ -341,7 +341,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 1.0.1
-Release: 1%{?dist}%{?extra_release}
+Release: 2%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -1605,8 +1605,9 @@ fi
 /sbin/chkconfig --add libvirt-guests
 %endif
 
-%postun client -p /sbin/ldconfig
+%postun client
 
+/sbin/ldconfig
 %if %{with_systemd}
 %if %{with_systemd_macros}
 %systemd_postun_with_restart libvirt-guests.service
@@ -1993,6 +1994,9 @@ rm -f $RPM_BUILD_ROOT%{_sysconfdir}/sysctl.d/libvirtd
 %endif
 
 %changelog
+* Mon Dec 17 2012 Cole Robinson <crobinso@redhat.com> - 1.0.1-2
+- Fix scriplet warning when uninstalling libvirt-client (bz #888071)
+
 * Mon Dec 17 2012 Daniel Veillard <veillard@redhat.com> - 1.0.1-1
 - Update to 1.0.1 release
 
