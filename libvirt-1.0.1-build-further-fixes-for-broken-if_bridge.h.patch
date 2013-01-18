@@ -1,0 +1,51 @@
+From 1bf661caf4e926efcad6e85151a587cea5fd29f4 Mon Sep 17 00:00:00 2001
+From: Eric Blake <eblake@redhat.com>
+Date: Mon, 14 Jan 2013 10:47:41 -0700
+Subject: [PATCH] build: further fixes for broken if_bridge.h
+
+Commit c308a9ae was incomplete; it resolved the configure failure,
+but not a later build failure.
+
+* src/util/virnetdevbridge.c: Include pre-req header.
+* configure.ac (AC_CHECK_HEADERS): Prefer standard in.h over
+non-standard ip6.h.
+---
+ configure.ac               | 2 +-
+ src/util/virnetdevbridge.c | 3 ++-
+ 2 files changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/configure.ac b/configure.ac
+index 3ab3c4e..712918f 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -979,7 +979,7 @@ if test "$with_linux" = "yes"; then
+   if test "$with_qemu" = "yes" || test "$with_lxc" = "yes" ; then
+     AC_CHECK_HEADERS([linux/param.h linux/sockios.h linux/if_bridge.h linux/if_tun.h],,
+       [AC_MSG_ERROR([You must install kernel-headers in order to compile libvirt with QEMU or LXC support])],
+-      [[#include <netinet/ip6.h>
++      [[#include <netinet/in.h>
+       ]])
+   fi
+ fi
+diff --git a/src/util/virnetdevbridge.c b/src/util/virnetdevbridge.c
+index b87c601..3c00be9 100644
+--- a/src/util/virnetdevbridge.c
++++ b/src/util/virnetdevbridge.c
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2007-2012 Red Hat, Inc.
++ * Copyright (C) 2007-2013 Red Hat, Inc.
+  *
+  * This library is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU Lesser General Public
+@@ -32,6 +32,7 @@
+ #include <sys/ioctl.h>
+ #include <sys/socket.h>
+ #include <net/if.h>
++#include <netinet/in.h>
+ 
+ #ifdef __linux__
+ # include <linux/sockios.h>
+-- 
+1.8.0.2
+

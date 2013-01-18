@@ -1,0 +1,43 @@
+From c308a9ae153db619fc0366bad9fd8f6c49cfac58 Mon Sep 17 00:00:00 2001
+From: Eric Blake <eblake@redhat.com>
+Date: Mon, 14 Jan 2013 09:54:25 -0700
+Subject: [PATCH] build: work around broken kernel header
+
+I got this scary warning during ./configure on rawhide:
+
+checking linux/if_bridge.h usability... no
+checking linux/if_bridge.h presence... yes
+configure: WARNING: linux/if_bridge.h: present but cannot be compiled
+configure: WARNING: linux/if_bridge.h:     check for missing prerequisite headers?
+configure: WARNING: linux/if_bridge.h: see the Autoconf documentation
+configure: WARNING: linux/if_bridge.h:     section "Present But Cannot Be Compiled"
+configure: WARNING: linux/if_bridge.h: proceeding with the compiler's result
+configure: WARNING:     ## ------------------------------------- ##
+configure: WARNING:     ## Report this to libvir-list@redhat.com ##
+configure: WARNING:     ## ------------------------------------- ##
+checking for linux/if_bridge.h... no
+
+* configure.ac (AC_CHECK_HEADERS): Provide struct in6_addr, since
+linux/if_bridge.h uses it without declaring it.
+---
+ configure.ac | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/configure.ac b/configure.ac
+index 8a424e7..1d0add5 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -978,7 +978,9 @@ dnl
+ if test "$with_linux" = "yes"; then
+   if test "$with_qemu" = "yes" || test "$with_lxc" = "yes" ; then
+     AC_CHECK_HEADERS([linux/param.h linux/sockios.h linux/if_bridge.h linux/if_tun.h],,
+-                     AC_MSG_ERROR([You must install kernel-headers in order to compile libvirt with QEMU or LXC support]))
++      [AC_MSG_ERROR([You must install kernel-headers in order to compile libvirt with QEMU or LXC support])],
++      [[#include <netinet/ip6.h>
++      ]])
+   fi
+ fi
+ 
+-- 
+1.8.0.2
+

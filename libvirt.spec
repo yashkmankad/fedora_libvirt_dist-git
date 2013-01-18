@@ -11,7 +11,7 @@
 # Default to skipping autoreconf.  Distros can change just this one line
 # (or provide a command-line override) if they backport any patches that
 # touch configure.ac or Makefile.am.
-%{!?enable_autotools:%define enable_autotools 0}
+%{!?enable_autotools:%define enable_autotools 1}
 
 # A client only build will create a libvirt.so only containing
 # the generic RPC driver, and test driver and no libvirtd
@@ -351,6 +351,8 @@ URL: http://libvirt.org/
 %define mainturl stable_updates/
 %endif
 Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
+Patch1: %{name}-%{version}-build-work-around-broken-kernel-header.patch
+Patch2: %{name}-%{version}-build-further-fixes-for-broken-if_bridge.h.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -1084,6 +1086,8 @@ of recent versions of Linux (and other OSes).
 
 %prep
 %setup -q
+%patch1 -p1
+%patch2 -p1
 
 %build
 %if ! %{with_xen}
@@ -1996,6 +2000,7 @@ rm -f $RPM_BUILD_ROOT%{_sysconfdir}/sysctl.d/libvirtd
 %changelog
 * Fri Jan 18 2013 Daniel P. Berrange <berrange@redhat.com> - 1.0.1-3
 - Rebuild for libnl3 soname change
+- Deal with broken kernel headers
 
 * Mon Dec 17 2012 Cole Robinson <crobinso@redhat.com> - 1.0.1-2
 - Fix scriplet warning when uninstalling libvirt-client (bz #888071)
