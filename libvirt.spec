@@ -341,7 +341,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 1.0.1
-Release: 2%{?dist}%{?extra_release}
+Release: 3%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -1994,6 +1994,9 @@ rm -f $RPM_BUILD_ROOT%{_sysconfdir}/sysctl.d/libvirtd
 %endif
 
 %changelog
+* Fri Jan 18 2013 Daniel P. Berrange <berrange@redhat.com> - 1.0.1-3
+- Rebuild for libnl3 soname change
+
 * Mon Dec 17 2012 Cole Robinson <crobinso@redhat.com> - 1.0.1-2
 - Fix scriplet warning when uninstalling libvirt-client (bz #888071)
 
