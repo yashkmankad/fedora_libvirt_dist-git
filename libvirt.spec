@@ -341,7 +341,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 1.0.1
-Release: 3%{?dist}%{?extra_release}
+Release: 4%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -1998,6 +1998,9 @@ rm -f $RPM_BUILD_ROOT%{_sysconfdir}/sysctl.d/libvirtd
 %endif
 
 %changelog
+* Sun Jan 20 2013 Richard W.M. Jones <rjones@redhat.com> - 1.0.1-4
+- Rebuild for libnl soname breakage (RHBZ#901569).
+
 * Fri Jan 18 2013 Daniel P. Berrange <berrange@redhat.com> - 1.0.1-3
 - Rebuild for libnl3 soname change
 - Deal with broken kernel headers
