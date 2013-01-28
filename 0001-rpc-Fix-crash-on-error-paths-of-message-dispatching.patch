@@ -1,0 +1,55 @@
+From 46532e3e8ed5f5a736a02f67d6c805492f9ca720 Mon Sep 17 00:00:00 2001
+From: Peter Krempa <pkrempa@redhat.com>
+Date: Fri, 4 Jan 2013 16:15:04 +0100
+Subject: [PATCH] rpc: Fix crash on error paths of message dispatching
+
+This patch resolves CVE-2013-0170:
+https://bugzilla.redhat.com/show_bug.cgi?id=893450
+
+When reading and dispatching of a message failed the message was freed
+but wasn't removed from the message queue.
+
+After that when the connection was about to be closed the pointer for
+the message was still present in the queue and it was passed to
+virNetMessageFree which tried to call the callback function from an
+uninitialized pointer.
+
+This patch removes the message from the queue before it's freed.
+
+* rpc/virnetserverclient.c: virNetServerClientDispatchRead:
+    - avoid use after free of RPC messages
+---
+ src/rpc/virnetserverclient.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/src/rpc/virnetserverclient.c b/src/rpc/virnetserverclient.c
+index af0560e..446e1e9 100644
+--- a/src/rpc/virnetserverclient.c
++++ b/src/rpc/virnetserverclient.c
+@@ -987,6 +987,7 @@ readmore:
+ 
+         /* Decode the header so we can use it for routing decisions */
+         if (virNetMessageDecodeHeader(msg) < 0) {
++            virNetMessageQueueServe(&client->rx);
+             virNetMessageFree(msg);
+             client->wantClose = true;
+             return;
+@@ -996,6 +997,7 @@ readmore:
+          * file descriptors */
+         if (msg->header.type == VIR_NET_CALL_WITH_FDS &&
+             virNetMessageDecodeNumFDs(msg) < 0) {
++            virNetMessageQueueServe(&client->rx);
+             virNetMessageFree(msg);
+             client->wantClose = true;
+             return; /* Error */
+@@ -1005,6 +1007,7 @@ readmore:
+         for (i = msg->donefds ; i < msg->nfds ; i++) {
+             int rv;
+             if ((rv = virNetSocketRecvFD(client->sock, &(msg->fds[i]))) < 0) {
++                virNetMessageQueueServe(&client->rx);
+                 virNetMessageFree(msg);
+                 client->wantClose = true;
+                 return;
+-- 
+1.8.1
+

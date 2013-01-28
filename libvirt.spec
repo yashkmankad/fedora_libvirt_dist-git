@@ -341,7 +341,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 1.0.1
-Release: 4%{?dist}%{?extra_release}
+Release: 5%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -353,6 +353,9 @@ URL: http://libvirt.org/
 Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
 Patch1: %{name}-%{version}-build-work-around-broken-kernel-header.patch
 Patch2: %{name}-%{version}-build-further-fixes-for-broken-if_bridge.h.patch
+# CVE-2013-0170 libvirt: use-after-free in virNetMessageFree() (bz
+# 893450, bz 905173)
+Patch3: 0001-rpc-Fix-crash-on-error-paths-of-message-dispatching.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -1088,6 +1091,7 @@ of recent versions of Linux (and other OSes).
 %setup -q
 %patch1 -p1
 %patch2 -p1
+%patch3 -p1
 
 %build
 %if ! %{with_xen}
@@ -1998,6 +2002,10 @@ rm -f $RPM_BUILD_ROOT%{_sysconfdir}/sysctl.d/libvirtd
 %endif
 
 %changelog
+* Mon Jan 28 2013 Cole Robinson <crobinso@redhat.com> - 1.0.1-5
+- CVE-2013-0170 libvirt: use-after-free in virNetMessageFree() (bz #893450, bz
+  #905173)
+
 * Sun Jan 20 2013 Richard W.M. Jones <rjones@redhat.com> - 1.0.1-4
 - Rebuild for libnl soname breakage (RHBZ#901569).
 
