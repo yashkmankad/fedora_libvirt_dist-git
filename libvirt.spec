@@ -341,7 +341,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 1.0.2
-Release: 1%{?dist}%{?extra_release}
+Release: 2%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -352,6 +352,7 @@ URL: http://libvirt.org/
 %endif
 Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
 Patch1: 0001-complete-virterror-virerror-name-change.patch
+Patch2: 0001-Fix-missing-error-constants-in-libvirt-python-module.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -1080,6 +1081,7 @@ of recent versions of Linux (and other OSes).
 %prep
 %setup -q
 %patch1 -p1
+%patch2 -p1
 
 %build
 %if ! %{with_xen}
@@ -1996,6 +1998,9 @@ fi
 %endif
 
 %changelog
+* Tue Feb  5 2013 Daniel P. Berrange <berrange@redhat.com> - 1.0.2-2
+- Fix missing python binding constants
+
 * Fri Feb  1 2013 Daniel P. Berrange <berrange@redhat.com> - 1.0.2-1
 - Update to 1.0.2 release
 
