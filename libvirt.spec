@@ -11,7 +11,7 @@
 # Default to skipping autoreconf.  Distros can change just this one line
 # (or provide a command-line override) if they backport any patches that
 # touch configure.ac or Makefile.am.
-%{!?enable_autotools:%define enable_autotools 0}
+%{!?enable_autotools:%define enable_autotools 1}
 
 # A client only build will create a libvirt.so only containing
 # the generic RPC driver, and test driver and no libvirtd
@@ -341,7 +341,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 1.0.2
-Release: 3%{?dist}%{?extra_release}
+Release: 4%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -354,6 +354,8 @@ Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
 Patch1: 0001-complete-virterror-virerror-name-change.patch
 Patch2: 0001-Fix-missing-error-constants-in-libvirt-python-module.patch
 Patch3: 0001-qemu-check-backing-chains-even-when-cgroup-is-omitte.patch
+# See https://www.redhat.com/archives/libvir-list/2013-February/thread.html#01673
+Patch4: 0001-Disable-virnettlscontexttest.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -1084,6 +1086,7 @@ of recent versions of Linux (and other OSes).
 %patch1 -p1
 %patch2 -p1
 %patch3 -p1
+%patch4 -p1
 
 %build
 %if ! %{with_xen}
@@ -2000,9 +2003,12 @@ fi
 %endif
 
 %changelog
-* Thu Feb 28 2013 Richard W.M. Jones <rjones@redhat.com> - 1.0.2-3
+* Thu Feb 28 2013 Richard W.M. Jones <rjones@redhat.com> - 1.0.2-4
 - Backport "qemu: check backing chains even when cgroup is omitted"
   (RHBZ#896685).
+- Disable virnettlscontexttest which apparently fails because of
+  a broken gnutls3.  Note since this patch touches Makefile.am, I
+  have enabled autoreconf (enable_autotools).
 
 * Tue Feb  5 2013 Daniel P. Berrange <berrange@redhat.com> - 1.0.2-2
 - Fix missing python binding constants
