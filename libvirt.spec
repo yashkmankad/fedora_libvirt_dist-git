@@ -341,7 +341,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 1.0.2
-Release: 2%{?dist}%{?extra_release}
+Release: 3%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -353,6 +353,7 @@ URL: http://libvirt.org/
 Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
 Patch1: 0001-complete-virterror-virerror-name-change.patch
 Patch2: 0001-Fix-missing-error-constants-in-libvirt-python-module.patch
+Patch3: 0001-qemu-check-backing-chains-even-when-cgroup-is-omitte.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -1082,6 +1083,7 @@ of recent versions of Linux (and other OSes).
 %setup -q
 %patch1 -p1
 %patch2 -p1
+%patch3 -p1
 
 %build
 %if ! %{with_xen}
@@ -1998,6 +2000,10 @@ fi
 %endif
 
 %changelog
+* Thu Feb 28 2013 Richard W.M. Jones <rjones@redhat.com> - 1.0.2-3
+- Backport "qemu: check backing chains even when cgroup is omitted"
+  (RHBZ#896685).
+
 * Tue Feb  5 2013 Daniel P. Berrange <berrange@redhat.com> - 1.0.2-2
 - Fix missing python binding constants
 

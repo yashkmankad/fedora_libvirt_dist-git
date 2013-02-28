@@ -1,0 +1,53 @@
+From 82d5fe543720da6d83c1d6bfa1c347d7d9fda278 Mon Sep 17 00:00:00 2001
+From: Eric Blake <eblake@redhat.com>
+Date: Wed, 20 Feb 2013 15:34:48 -0700
+Subject: [PATCH] qemu: check backing chains even when cgroup is omitted
+
+https://bugzilla.redhat.com/show_bug.cgi?id=896685 points out
+a regression caused by commit 38c4a9c - libvirt only labels
+the backing chain if the backing chain cache is populated, but
+the code to populate the cache was only conditionally performed
+if cgroup labeling was necessary.
+
+* src/qemu/qemu_cgroup.c (qemuSetupCgroup): Hoist cache setup...
+* src/qemu/qemu_process.c (qemuProcessStart): ...earlier into
+caller, where it is now unconditional.
+---
+ src/qemu/qemu_cgroup.c  | 4 +---
+ src/qemu/qemu_process.c | 5 +++++
+ 2 files changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/src/qemu/qemu_cgroup.c b/src/qemu/qemu_cgroup.c
+index 4fde1af..e65b486 100644
+--- a/src/qemu/qemu_cgroup.c
++++ b/src/qemu/qemu_cgroup.c
+@@ -234,9 +234,7 @@ int qemuSetupCgroup(virQEMUDriverPtr driver,
+         }
+ 
+         for (i = 0; i < vm->def->ndisks ; i++) {
+-            if (qemuDomainDetermineDiskChain(driver, vm->def->disks[i],
+-                                             false) < 0 ||
+-                qemuSetupDiskCgroup(vm, cgroup, vm->def->disks[i]) < 0)
++            if (qemuSetupDiskCgroup(vm, cgroup, vm->def->disks[i]) < 0)
+                 goto cleanup;
+         }
+ 
+diff --git a/src/qemu/qemu_process.c b/src/qemu/qemu_process.c
+index aade682..b560d2e 100644
+--- a/src/qemu/qemu_process.c
++++ b/src/qemu/qemu_process.c
+@@ -3706,6 +3706,11 @@ int qemuProcessStart(virConnectPtr conn,
+         goto cleanup;
+ 
+     VIR_DEBUG("Checking for CDROM and floppy presence");
++    for (i = 0; i < vm->def->ndisks ; i++) {
++        if (qemuDomainDetermineDiskChain(driver, vm->def->disks[i],
++                                         false) < 0)
++            goto cleanup;
++    }
+     if (qemuDomainCheckDiskPresence(driver, vm,
+                                     flags & VIR_QEMU_PROCESS_START_COLD) < 0)
+         goto cleanup;
+-- 
+1.8.1.2
+
