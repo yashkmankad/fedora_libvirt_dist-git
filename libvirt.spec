@@ -340,7 +340,7 @@
 
 Summary: Library providing a simple virtualization API
 Name: libvirt
-Version: 1.0.3
+Version: 1.0.4
 Release: 1%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
@@ -1994,6 +1994,9 @@ fi
 %endif
 
 %changelog
+* Mon Apr  1 2013 Daniel Veillard <veillard@redhat.com> - 1.0.4-1
+- Update to 1.0.4 release
+
 * Tue Mar  5 2013 Daniel P. Berrange <berrange@redhat.com> - 1.0.3-1
 - Update to 1.0.3 release
 
