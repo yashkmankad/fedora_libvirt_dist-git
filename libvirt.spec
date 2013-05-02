@@ -340,7 +340,7 @@
 
 Summary: Library providing a simple virtualization API
 Name: libvirt
-Version: 1.0.4
+Version: 1.0.5
 Release: 1%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
@@ -394,6 +394,7 @@ BuildRequires: autoconf
 BuildRequires: automake
 BuildRequires: gettext-devel
 BuildRequires: libtool
+BuildRequires: /usr/bin/pod2man
 %endif
 BuildRequires: python-devel
 %if %{with_systemd}
@@ -411,6 +412,10 @@ BuildRequires: gettext
 BuildRequires: libtasn1-devel
 BuildRequires: gnutls-devel
 BuildRequires: libattr-devel
+%if %{with_libvirtd}
+# For pool-build probing for existing pools
+BuildRequires: libblkid-devel >= 2.17
+%endif
 %if 0%{?fedora} >= 12 || 0%{?rhel} >= 6
 # for augparse, optionally used in testing
 BuildRequires: augeas
@@ -654,8 +659,6 @@ Requires: PolicyKit >= 0.6
 Requires: nfs-utils
 # For mkfs
 Requires: util-linux
-# For pool-build probing for existing pools
-BuildRequires: libblkid-devel >= 2.17
 # For glusterfs
         %if 0%{?fedora} >= 11
 Requires: glusterfs-client >= 2.0.1
@@ -1941,6 +1944,7 @@ fi
 %{_datadir}/libvirt/schemas/storagevol.rng
 
 %{_datadir}/libvirt/cpu_map.xml
+%{_datadir}/libvirt/libvirtLogo.png
 
 %if %{with_systemd}
 %{_unitdir}/libvirt-guests.service
@@ -1994,6 +1998,14 @@ fi
 %endif
 
 %changelog
+* Thu May  2 2013 Daniel Veillard <veillard@redhat.com> - 1.0.5-1
+- Update to 1.0.5 release
+- add support for NVRAM device
+- Add XML config for resource partitions
+- Add support for TPM
+- NPIV storage migration support
+- various bug fixes and improvements including localizations
+
 * Mon Apr  1 2013 Daniel Veillard <veillard@redhat.com> - 1.0.4-1
 - Update to 1.0.4 release
 
