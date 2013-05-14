@@ -341,7 +341,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 1.0.5
-Release: 2%{?dist}%{?extra_release}
+Release: 3%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -353,6 +353,8 @@ URL: http://libvirt.org/
 Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
 
 Patch1: libvirt-1.0.5-fix-network-driver-startup-qemu-session.patch
+# Fix stream operations like screenshot (bz #960879)
+Patch0002: 0002-Fix-iohelper-usage-with-streams-opened-for-read.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -1084,6 +1086,8 @@ of recent versions of Linux (and other OSes).
 %prep
 %setup -q
 %patch1 -p1
+# Fix stream operations like screenshot (bz #960879)
+%patch0002 -p1
 
 %build
 %if ! %{with_xen}
@@ -2001,6 +2005,9 @@ fi
 %endif
 
 %changelog
+* Tue May 14 2013 Cole Robinson <crobinso@redhat.com> - 1.0.5-3
+- Fix stream operations like screenshot (bz #960879)
+
 * Fri May  3 2013 Richard W.M. Jones <rjones@redhat.com> - 1.0.5-2
 - Fix network driver when using qemu:///session (bz #958907).
 

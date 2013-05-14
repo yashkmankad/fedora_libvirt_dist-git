@@ -1,0 +1,34 @@
+From a2214c5257d3bd7b086ce04aca1648e8ff05ee96 Mon Sep 17 00:00:00 2001
+Message-Id: <a2214c5257d3bd7b086ce04aca1648e8ff05ee96.1368567003.git.crobinso@redhat.com>
+From: "Daniel P. Berrange" <berrange@redhat.com>
+Date: Fri, 10 May 2013 14:45:05 +0100
+Subject: [PATCH] Fix iohelper usage with streams opened for read
+
+In b2878ed860ceceec3cd6481424fed0b543b687cd we added the O_NOCTTY
+flag when opening files in the stream code. Unfortunately a later
+piece of code was comparing the flags == O_RDONLY, without masking
+out the non-access mode flags. This broke the iohelper when used
+with streams for read, since it caused us to attach the stream
+output pipe to the stream input FD instead of output FD :-(
+
+Signed-off-by: Daniel P. Berrange <berrange@redhat.com>
+---
+ src/fdstream.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/fdstream.c b/src/fdstream.c
+index 6f8ce53..a9a4851 100644
+--- a/src/fdstream.c
++++ b/src/fdstream.c
+@@ -641,7 +641,7 @@ virFDStreamOpenFileInternal(virStreamPtr st,
+         virCommandTransferFD(cmd, fd);
+         virCommandAddArgFormat(cmd, "%d", fd);
+ 
+-        if (oflags == O_RDONLY) {
++        if ((oflags & O_ACCMODE) == O_RDONLY) {
+             childfd = fds[1];
+             fd = fds[0];
+             virCommandSetOutputFD(cmd, &childfd);
+-- 
+1.8.2.1
+
