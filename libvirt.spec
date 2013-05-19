@@ -340,8 +340,8 @@
 
 Summary: Library providing a simple virtualization API
 Name: libvirt
-Version: 1.0.5
-Release: 3%{?dist}%{?extra_release}
+Version: 1.0.5.1
+Release: 1%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -351,10 +351,6 @@ URL: http://libvirt.org/
     %define mainturl stable_updates/
 %endif
 Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
-
-Patch1: libvirt-1.0.5-fix-network-driver-startup-qemu-session.patch
-# Fix stream operations like screenshot (bz #960879)
-Patch0002: 0002-Fix-iohelper-usage-with-streams-opened-for-read.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -722,6 +718,8 @@ Requires: numad
     %endif
 # libvirtd depends on 'messagebus' service
 Requires: dbus
+# For uid creation during pre
+Requires(pre): shadow-utils
 
 %description daemon
 Server side daemon required to manage the virtualization capabilities
@@ -1085,9 +1083,6 @@ of recent versions of Linux (and other OSes).
 
 %prep
 %setup -q
-%patch1 -p1
-# Fix stream operations like screenshot (bz #960879)
-%patch0002 -p1
 
 %build
 %if ! %{with_xen}
@@ -1451,14 +1446,19 @@ make check
 %if %{with_libvirtd}
 %pre daemon
     %if 0%{?fedora} >= 12 || 0%{?rhel} >= 6
-# Normally 'setup' adds this in /etc/passwd, but this is
-# here for case of upgrades from earlier Fedora/RHEL. This
-# UID/GID pair is reserved for qemu:qemu
-getent group kvm >/dev/null || groupadd -g 36 -r kvm
-getent group qemu >/dev/null || groupadd -g 107 -r qemu
-getent passwd qemu >/dev/null || \
-  useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
-    -c "qemu user" qemu
+# We want soft static allocation of well-known ids, as disk images
+# are commonly shared across NFS mounts by id rather than name; see
+# https://fedoraproject.org/wiki/Packaging:UsersAndGroups
+getent group kvm >/dev/null || groupadd -f -g 36 -r kvm
+getent group qemu >/dev/null || groupadd -f -g 107 -r qemu
+if ! getent passwd qemu >/dev/null; then
+  if ! getent passwd 107 >/dev/null; then
+    useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin -c "qemu user" qemu
+  else
+    useradd -r -g qemu -G kvm -d / -s /sbin/nologin -c "qemu user" qemu
+  fi
+fi
+exit 0
     %endif
 
 %post daemon
@@ -2005,6 +2005,11 @@ fi
 %endif
 
 %changelog
+* Sun May 19 2013 Cole Robinson <crobinso@redhat.com> - 1.0.5.1-1
+- Rebased to version 1.0.5.1
+- Follow updated packaging guidelines for user alloc (bz #924501)
+- CVE-2013-1962 Open files DoS (bz #963789, bz #953107)
+
 * Tue May 14 2013 Cole Robinson <crobinso@redhat.com> - 1.0.5-3
 - Fix stream operations like screenshot (bz #960879)
 
