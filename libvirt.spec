@@ -346,7 +346,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 1.0.6
-Release: 1%{?dist}%{?extra_release}
+Release: 2%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -1049,7 +1049,6 @@ Requires: libvirt-daemon-driver-nwfilter = %{version}-%{release}
 Requires: libvirt-daemon-driver-secret = %{version}-%{release}
 Requires: libvirt-daemon-driver-storage = %{version}-%{release}
         %endif
-Requires: vbox
 
 %description daemon-vbox
 Server side daemon and driver required to manage the virtualization
@@ -2060,6 +2059,9 @@ fi
 %endif
 
 %changelog
+* Sat Jun 08 2013 Cole Robinson <crobinso@redhat.com> - 1.0.6-2
+- Drop bogus dep on vbox
+
 * Mon Jun  3 2013 Daniel P. Berrange <berrange@redhat.com> - 1.0.6-1
 - Update to 1.0.6 release
 
