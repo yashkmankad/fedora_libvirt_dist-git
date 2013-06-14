@@ -54,7 +54,12 @@
 %define with_qemu_tcg      %{with_qemu}
 # Change if we ever provide qemu-kvm binaries on non-x86 hosts
 %if 0%{?fedora} >= 18
-    %define qemu_kvm_arches    %{ix86} x86_64 ppc64 s390x
+    %if 0%{?fedora} >= 20
+        # ARM is supported as of qemu 1.5 so we need to adjust if/when it lands in F-19
+        %define qemu_kvm_arches    %{ix86} x86_64 ppc64 s390x %{arm}
+    %else
+        %define qemu_kvm_arches    %{ix86} x86_64 ppc64 s390x
+    %endif
 %else
     %define qemu_kvm_arches    %{ix86} x86_64
 %endif
@@ -346,7 +351,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 1.0.6
-Release: 2%{?dist}%{?extra_release}
+Release: 3%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -2059,6 +2064,9 @@ fi
 %endif
 
 %changelog
+* Fri Jun 14 2013 Peter Robinson <pbrobinson@fedoraproject.org> 1.0.6-3
+- Enable KVM support on ARM
+
 * Sat Jun 08 2013 Cole Robinson <crobinso@redhat.com> - 1.0.6-2
 - Drop bogus dep on vbox
 
