@@ -55,7 +55,6 @@
 # Change if we ever provide qemu-kvm binaries on non-x86 hosts
 %if 0%{?fedora} >= 18
     %if 0%{?fedora} >= 20
-        # ARM is supported as of qemu 1.5 so we need to adjust if/when it lands in F-19
         %define qemu_kvm_arches    %{ix86} x86_64 ppc64 s390x %{arm}
     %else
         %define qemu_kvm_arches    %{ix86} x86_64 ppc64 s390x
@@ -350,8 +349,8 @@
 
 Summary: Library providing a simple virtualization API
 Name: libvirt
-Version: 1.0.6
-Release: 3%{?dist}%{?extra_release}
+Version: 1.1.0
+Release: 1%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -413,7 +412,7 @@ BuildRequires: python-devel
 %if %{with_systemd}
 BuildRequires: systemd-units
 %endif
-%if %{with_xen}
+%if %{with_xen} || %{with_libxl}
 BuildRequires: xen-devel
 %endif
 BuildRequires: libxml2-devel
@@ -423,6 +422,7 @@ BuildRequires: readline-devel
 BuildRequires: ncurses-devel
 BuildRequires: gettext
 BuildRequires: libtasn1-devel
+BuildRequires: libgcrypt-devel
 BuildRequires: gnutls-devel
 BuildRequires: libattr-devel
 %if %{with_libvirtd}
@@ -1820,6 +1820,7 @@ fi
     %if %{with_polkit}
         %if 0%{?fedora} >= 12 || 0%{?rhel} >= 6
 %{_datadir}/polkit-1/actions/org.libvirt.unix.policy
+%{_datadir}/polkit-1/actions/org.libvirt.api.policy
         %else
 %{_datadir}/PolicyKit/policy/org.libvirt.unix.policy
         %endif
@@ -2006,6 +2007,7 @@ fi
 %{_datadir}/libvirt/schemas/nwfilter.rng
 %{_datadir}/libvirt/schemas/secret.rng
 %{_datadir}/libvirt/schemas/storageencryption.rng
+%{_datadir}/libvirt/schemas/storagefilefeatures.rng
 %{_datadir}/libvirt/schemas/storagepool.rng
 %{_datadir}/libvirt/schemas/storagevol.rng
 
@@ -2064,6 +2066,14 @@ fi
 %endif
 
 %changelog
+* Mon Jul  1 2013 Daniel Veillard <veillard@redhat.com> - 1.1.0-1
+- CVE-2013-2218: Fix crash listing network interfaces with filters
+- Fine grained ACL support for the API
+- Extensible migration APIs
+- various improvements in the Xen driver
+- agent based vCPU hotplug support
+- various bug fixes and improvements including localizations
+
 * Fri Jun 14 2013 Peter Robinson <pbrobinson@fedoraproject.org> 1.0.6-3
 - Enable KVM support on ARM
 
