@@ -350,7 +350,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 1.1.0
-Release: 1%{?dist}%{?extra_release}
+Release: 2%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -360,6 +360,9 @@ URL: http://libvirt.org/
     %define mainturl stable_updates/
 %endif
 Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
+
+# CVE-2013-2230 libvirt: multiple registered events crash
+Patch0001: 0001-Fix-crash-when-multiple-event-callbacks-were-registe.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -1130,6 +1133,9 @@ of recent versions of Linux (and other OSes).
 
 %prep
 %setup -q
+
+# CVE-2013-2230 libvirt: multiple registered events crash
+%patch0001 -p1
 
 %build
 %if ! %{with_xen}
@@ -2066,6 +2072,9 @@ fi
 %endif
 
 %changelog
+* Thu Jul 11 2013 Cole Robinson <crobinso@redhat.com> - 1.1.0-2
+- CVE-2013-2230 libvirt: multiple registered events crash
+
 * Mon Jul  1 2013 Daniel Veillard <veillard@redhat.com> - 1.1.0-1
 - CVE-2013-2218: Fix crash listing network interfaces with filters
 - Fine grained ACL support for the API
