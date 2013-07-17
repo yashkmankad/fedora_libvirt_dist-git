@@ -350,7 +350,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 1.1.0
-Release: 2%{?dist}%{?extra_release}
+Release: 3%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -2072,6 +2072,9 @@ fi
 %endif
 
 %changelog
+* Wed Jul 17 2013 Daniel P. Berrange <berrange@redhat.com> - 1.1.0-3
+- Rebuild for change in Xen library ABI/soname
+
 * Thu Jul 11 2013 Cole Robinson <crobinso@redhat.com> - 1.1.0-2
 - CVE-2013-2230 libvirt: multiple registered events crash
 
