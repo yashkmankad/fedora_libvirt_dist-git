@@ -350,7 +350,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 1.1.0
-Release: 3%{?dist}%{?extra_release}
+Release: 4%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -363,6 +363,12 @@ Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
 
 # CVE-2013-2230 libvirt: multiple registered events crash
 Patch0001: 0001-Fix-crash-when-multiple-event-callbacks-were-registe.patch
+# CVE-2013-4153: Fix double free of returned JSON (bz #986408, bz
+# #986383)
+Patch0002: 0002-qemu-Fix-double-free-of-returned-JSON-array-in-qemuA.patch
+# CVE-2013-4154: Crash of libvirtd if guest agent not configured (bz
+# #986386, bz #986406)
+Patch0003: 0003-qemu-Prevent-crash-of-libvirtd-without-guest-agent-c.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -1136,6 +1142,12 @@ of recent versions of Linux (and other OSes).
 
 # CVE-2013-2230 libvirt: multiple registered events crash
 %patch0001 -p1
+# CVE-2013-4153: Fix double free of returned JSON (bz #986408, bz
+# #986383)
+%patch0002 -p1
+# CVE-2013-4154: Crash of libvirtd if guest agent not configured (bz
+# #986386, bz #986406)
+%patch0003 -p1
 
 %build
 %if ! %{with_xen}
@@ -2072,6 +2084,11 @@ fi
 %endif
 
 %changelog
+* Thu Jul 25 2013 Cole Robinson <crobinso@redhat.com> - 1.1.0-4
+- CVE-2013-4153: Fix double free of returned JSON (bz #986408, bz #986383)
+- CVE-2013-4154: Crash of libvirtd if guest agent not configured (bz #986386,
+  bz #986406)
+
 * Wed Jul 17 2013 Daniel P. Berrange <berrange@redhat.com> - 1.1.0-3
 - Rebuild for change in Xen library ABI/soname
 
