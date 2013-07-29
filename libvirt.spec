@@ -350,7 +350,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 1.1.0
-Release: 4%{?dist}%{?extra_release}
+Release: 5%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -369,6 +369,8 @@ Patch0002: 0002-qemu-Fix-double-free-of-returned-JSON-array-in-qemuA.patch
 # CVE-2013-4154: Crash of libvirtd if guest agent not configured (bz
 # #986386, bz #986406)
 Patch0003: 0003-qemu-Prevent-crash-of-libvirtd-without-guest-agent-c.patch
+
+Patch4:    libvirt-1.1.0-python-docpath.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -1148,6 +1150,7 @@ of recent versions of Linux (and other OSes).
 # CVE-2013-4154: Crash of libvirtd if guest agent not configured (bz
 # #986386, bz #986406)
 %patch0003 -p1
+%patch4 -p1
 
 %build
 %if ! %{with_xen}
@@ -2084,6 +2087,9 @@ fi
 %endif
 
 %changelog
+* Sun Jul 28 2013 Dennis Gilmore <dennis@ausil.us> - 1.1.0-5
+- fix doc path in libvirt-python
+
 * Thu Jul 25 2013 Cole Robinson <crobinso@redhat.com> - 1.1.0-4
 - CVE-2013-4153: Fix double free of returned JSON (bz #986408, bz #986383)
 - CVE-2013-4154: Crash of libvirtd if guest agent not configured (bz #986386,
