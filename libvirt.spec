@@ -349,8 +349,8 @@
 
 Summary: Library providing a simple virtualization API
 Name: libvirt
-Version: 1.1.0
-Release: 5%{?dist}%{?extra_release}
+Version: 1.1.1
+Release: 1%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -360,17 +360,6 @@ URL: http://libvirt.org/
     %define mainturl stable_updates/
 %endif
 Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
-
-# CVE-2013-2230 libvirt: multiple registered events crash
-Patch0001: 0001-Fix-crash-when-multiple-event-callbacks-were-registe.patch
-# CVE-2013-4153: Fix double free of returned JSON (bz #986408, bz
-# #986383)
-Patch0002: 0002-qemu-Fix-double-free-of-returned-JSON-array-in-qemuA.patch
-# CVE-2013-4154: Crash of libvirtd if guest agent not configured (bz
-# #986386, bz #986406)
-Patch0003: 0003-qemu-Prevent-crash-of-libvirtd-without-guest-agent-c.patch
-
-Patch4:    libvirt-1.1.0-python-docpath.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -1142,16 +1131,6 @@ of recent versions of Linux (and other OSes).
 %prep
 %setup -q
 
-# CVE-2013-2230 libvirt: multiple registered events crash
-%patch0001 -p1
-# CVE-2013-4153: Fix double free of returned JSON (bz #986408, bz
-# #986383)
-%patch0002 -p1
-# CVE-2013-4154: Crash of libvirtd if guest agent not configured (bz
-# #986386, bz #986406)
-%patch0003 -p1
-%patch4 -p1
-
 %build
 %if ! %{with_xen}
     %define _without_xen --without-xen
@@ -1461,12 +1440,6 @@ rm -f $RPM_BUILD_ROOT%{_datadir}/augeas/lenses/libvirtd_lxc.aug
 rm -f $RPM_BUILD_ROOT%{_datadir}/augeas/lenses/tests/test_libvirtd_lxc.aug
 %endif
 
-%if ! %{with_python}
-rm -rf $RPM_BUILD_ROOT%{_datadir}/doc/libvirt-python-%{version}
-%else
-rm -rf $RPM_BUILD_ROOT%{_datadir}/doc/libvirt-python-%{version}/examples
-%endif
-
 %if ! %{with_qemu}
 rm -rf $RPM_BUILD_ROOT%{_sysconfdir}/libvirt/qemu.conf
 rm -rf $RPM_BUILD_ROOT%{_sysconfdir}/logrotate.d/libvirtd.qemu
@@ -1509,7 +1482,11 @@ do
   printf '#!/bin/sh\nexit 0\n' > $i
   chmod +x $i
 done
-make check
+if ! make check VIR_TEST_DEBUG=1
+then
+  cat test-suite.log || true
+  exit 1
+fi
 
 %if %{with_libvirtd}
 %pre daemon
@@ -2081,12 +2058,14 @@ fi
 %{_libdir}/python*/site-packages/libvirt_lxc.py*
 %{_libdir}/python*/site-packages/libvirtmod*
 %doc python/tests/*.py
-%doc python/TODO
 %doc examples/python
 %doc examples/domain-events/events-python
 %endif
 
 %changelog
+* Tue Jul 30 2013 Daniel P. Berrange <berrange@redhat.com> - 1.1.1-1
+- Update to 1.1.1 release
+
 * Sun Jul 28 2013 Dennis Gilmore <dennis@ausil.us> - 1.1.0-5
 - fix doc path in libvirt-python
 
