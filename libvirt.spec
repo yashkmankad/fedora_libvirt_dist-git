@@ -350,7 +350,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 1.1.1
-Release: 1%{?dist}%{?extra_release}
+Release: 2%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -360,6 +360,10 @@ URL: http://libvirt.org/
     %define mainturl stable_updates/
 %endif
 Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
+
+# CVE-2013-4239: xen: memory corruption in legacy driver (bz #996241, bz
+# #996244)
+Patch0001: 0001-xen-fix-memory-corruption-in-legacy-driver.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -1130,6 +1134,10 @@ of recent versions of Linux (and other OSes).
 
 %prep
 %setup -q
+
+# CVE-2013-4239: xen: memory corruption in legacy driver (bz #996241, bz
+# #996244)
+%patch0001 -p1
 
 %build
 %if ! %{with_xen}
@@ -2069,6 +2077,10 @@ fi
 %endif
 
 %changelog
+* Wed Aug 14 2013 Cole Robinson <crobinso@redhat.com> - 1.1.1-2
+- CVE-2013-4239: xen: memory corruption in legacy driver (bz #996241, bz
+  #996244)
+
 * Tue Jul 30 2013 Daniel P. Berrange <berrange@redhat.com> - 1.1.1-1
 - Update to 1.1.1 release
 
