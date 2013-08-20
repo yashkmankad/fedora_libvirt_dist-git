@@ -1,5 +1,4 @@
-From 0e671a1646df543eab683b38f6644f70d12fbee1 Mon Sep 17 00:00:00 2001
-Message-Id: <0e671a1646df543eab683b38f6644f70d12fbee1.1376524611.git.crobinso@redhat.com>
+From 815828b54398429bddb290d954e6b0291e8831a4 Mon Sep 17 00:00:00 2001
 From: Jim Fehlig <jfehlig@suse.com>
 Date: Mon, 5 Aug 2013 10:27:23 -0600
 Subject: [PATCH] xen: fix memory corruption in legacy driver
@@ -25,15 +24,17 @@ of havoc in libvirtd such as aborts like the following
 /lib64/libc.so.6(clone+0x6d)[0x7ffff400e7dd]
 
 Fix by initializing ret to 0 and only setting to error on failure path.
+
+(cherry picked from commit 0e671a1646df543eab683b38f6644f70d12fbee1)
 ---
  src/xen/xend_internal.c | 7 +++----
  1 file changed, 3 insertions(+), 4 deletions(-)
 
 diff --git a/src/xen/xend_internal.c b/src/xen/xend_internal.c
-index 1ce36e6..f698c8d 100644
+index 9d61fca..01e74bd 100644
 --- a/src/xen/xend_internal.c
 +++ b/src/xen/xend_internal.c
-@@ -2896,7 +2896,7 @@ xenDaemonListDefinedDomains(virConnectPtr conn,
+@@ -2897,7 +2897,7 @@ xenDaemonListDefinedDomains(virConnectPtr conn,
  {
      struct sexpr *root = NULL;
      size_t i;
@@ -42,7 +43,7 @@ index 1ce36e6..f698c8d 100644
      struct sexpr *_for_i, *node;
  
      if (maxnames == 0)
-@@ -2919,16 +2919,15 @@ xenDaemonListDefinedDomains(virConnectPtr conn,
+@@ -2920,16 +2920,15 @@ xenDaemonListDefinedDomains(virConnectPtr conn,
              break;
      }
  
@@ -61,6 +62,3 @@ index 1ce36e6..f698c8d 100644
      goto cleanup;
  }
  
--- 
-1.8.3.1
-

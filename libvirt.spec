@@ -350,7 +350,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 1.1.1
-Release: 2%{?dist}%{?extra_release}
+Release: 3%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -364,6 +364,18 @@ Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
 # CVE-2013-4239: xen: memory corruption in legacy driver (bz #996241, bz
 # #996244)
 Patch0001: 0001-xen-fix-memory-corruption-in-legacy-driver.patch
+# Fix launching ARM guests on x86 (patches posted upstream, F20 feature)
+Patch0002: 0002-conf-add-default-USB-controller-in-qemu-post-parse-c.patch
+Patch0003: 0003-qemu-rename-some-functions-in-qemu_command.c.patch
+Patch0004: 0004-qemu-Set-QEMU_AUDIO_DRV-none-with-nographic.patch
+Patch0005: 0005-qemu-Only-setup-vhost-if-virtType-kvm.patch
+Patch0006: 0006-domain_conf-Add-default-memballon-in-PostParse-callb.patch
+Patch0007: 0007-qemu-Don-t-add-default-memballoon-device-on-ARM.patch
+Patch0008: 0008-qemu-Fix-adding-specifying-char-devs-for-ARM.patch
+Patch0009: 0009-qemu-Don-t-try-to-allocate-PCI-addresses-for-ARM.patch
+Patch0010: 0010-domain_conf-Add-disk-bus-sd-wire-it-up-for-qemu.patch
+Patch0011: 0011-qemu-Fix-networking-for-ARM-guests.patch
+Patch0012: 0012-qemu-Support-virtio-mmio-transport-for-virtio-on-ARM.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -1138,6 +1150,18 @@ of recent versions of Linux (and other OSes).
 # CVE-2013-4239: xen: memory corruption in legacy driver (bz #996241, bz
 # #996244)
 %patch0001 -p1
+# Fix launching ARM guests on x86 (patches posted upstream, F20 feature)
+%patch0002 -p1
+%patch0003 -p1
+%patch0004 -p1
+%patch0005 -p1
+%patch0006 -p1
+%patch0007 -p1
+%patch0008 -p1
+%patch0009 -p1
+%patch0010 -p1
+%patch0011 -p1
+%patch0012 -p1
 
 %build
 %if ! %{with_xen}
@@ -2077,6 +2101,9 @@ fi
 %endif
 
 %changelog
+* Tue Aug 20 2013 Cole Robinson <crobinso@redhat.com> - 1.1.1-3
+- Fix launching ARM guests on x86 (patches posted upstream, F20 feature)
+
 * Wed Aug 14 2013 Cole Robinson <crobinso@redhat.com> - 1.1.1-2
 - CVE-2013-4239: xen: memory corruption in legacy driver (bz #996241, bz
   #996244)

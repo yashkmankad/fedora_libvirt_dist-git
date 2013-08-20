@@ -1,0 +1,31 @@
+From 9475a3ba1e808aa3fe1a975e98bcd1ac7a660d01 Mon Sep 17 00:00:00 2001
+From: Cole Robinson <crobinso@redhat.com>
+Date: Wed, 31 Jul 2013 21:37:40 -0400
+Subject: [PATCH] qemu: Only setup vhost if virtType == "kvm"
+
+vhost only works in KVM mode at the moment, and is infact compiled
+out if the emulator is built for non-native architecture. While it
+may work at some point in the future for plain qemu, for now it's
+just noise on the command line (and which contributes to arm cli
+breakage).
+---
+ src/qemu/qemu_command.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/src/qemu/qemu_command.c b/src/qemu/qemu_command.c
+index d968333..6710bf0 100644
+--- a/src/qemu/qemu_command.c
++++ b/src/qemu/qemu_command.c
+@@ -441,8 +441,10 @@ qemuOpenVhostNet(virDomainDefPtr def,
+ {
+     size_t i;
+ 
+-    /* If the config says explicitly to not use vhost, return now */
+-    if (net->driver.virtio.name == VIR_DOMAIN_NET_BACKEND_TYPE_QEMU) {
++    /* If running a plain QEMU guest, or
++     * if the config says explicitly to not use vhost, return now*/
++    if (def->virtType != VIR_DOMAIN_VIRT_KVM ||
++        net->driver.virtio.name == VIR_DOMAIN_NET_BACKEND_TYPE_QEMU) {
+         *vhostfdSize = 0;
+         return 0;
+     }
