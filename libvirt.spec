@@ -100,6 +100,9 @@
 %define with_numactl          0%{!?_without_numactl:%{server_drivers}}
 %define with_selinux          0%{!?_without_selinux:%{server_drivers}}
 
+# Just hardcode to off, since few people ever have apparmor RPMs installed
+%define with_apparmor         0%{!?_without_apparmor:0}
+
 # A few optional bits off by default, we enable later
 %define with_polkit        0%{!?_without_polkit:0}
 %define with_capng         0%{!?_without_capng:0}
@@ -245,14 +248,19 @@
 %if 0%{?fedora} >= 16
     %define with_sanlock 0%{!?_without_sanlock:%{server_drivers}}
 %endif
-%if 0%{?rhel} >= 6
+%if 0%{?rhel} == 6
     %ifarch %{ix86} x86_64
+        %define with_sanlock 0%{!?_without_sanlock:%{server_drivers}}
+    %endif
+%endif
+%if 0%{?rhel} >= 7
+    %ifarch x86_64
         %define with_sanlock 0%{!?_without_sanlock:%{server_drivers}}
     %endif
 %endif
 
 # Enable libssh2 transport for new enough distros
-%if 0%{?fedora} >= 17 || 0%{?rhel} >= 6
+%if 0%{?fedora} >= 17
     %define with_libssh2 0%{!?_without_libssh2:1}
 %endif
 
@@ -347,10 +355,18 @@
 %endif
 
 
+# RHEL releases provide stable tool chains and so it is safe to turn
+# compiler warning into errors without being worried about frequent
+# changes in reported warnings
+%if 0%{?rhel}
+    %define enable_werror --enable-werror
+%endif
+
+
 Summary: Library providing a simple virtualization API
 Name: libvirt
-Version: 1.1.1
-Release: 3%{?dist}%{?extra_release}
+Version: 1.1.2
+Release: 1%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -361,21 +377,15 @@ URL: http://libvirt.org/
 %endif
 Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
 
-# CVE-2013-4239: xen: memory corruption in legacy driver (bz #996241, bz
-# #996244)
-Patch0001: 0001-xen-fix-memory-corruption-in-legacy-driver.patch
 # Fix launching ARM guests on x86 (patches posted upstream, F20 feature)
-Patch0002: 0002-conf-add-default-USB-controller-in-qemu-post-parse-c.patch
-Patch0003: 0003-qemu-rename-some-functions-in-qemu_command.c.patch
-Patch0004: 0004-qemu-Set-QEMU_AUDIO_DRV-none-with-nographic.patch
-Patch0005: 0005-qemu-Only-setup-vhost-if-virtType-kvm.patch
-Patch0006: 0006-domain_conf-Add-default-memballon-in-PostParse-callb.patch
-Patch0007: 0007-qemu-Don-t-add-default-memballoon-device-on-ARM.patch
-Patch0008: 0008-qemu-Fix-adding-specifying-char-devs-for-ARM.patch
-Patch0009: 0009-qemu-Don-t-try-to-allocate-PCI-addresses-for-ARM.patch
-Patch0010: 0010-domain_conf-Add-disk-bus-sd-wire-it-up-for-qemu.patch
-Patch0011: 0011-qemu-Fix-networking-for-ARM-guests.patch
-Patch0012: 0012-qemu-Support-virtio-mmio-transport-for-virtio-on-ARM.patch
+Patch0001: 0001-qemu-Set-QEMU_AUDIO_DRV-none-with-nographic.patch
+Patch0002: 0002-domain_conf-Add-default-memballoon-in-PostParse-call.patch
+Patch0003: 0003-qemu-Don-t-add-default-memballoon-device-on-ARM.patch
+Patch0004: 0004-qemu-Fix-specifying-char-devs-for-ARM.patch
+Patch0005: 0005-qemu-Don-t-try-to-allocate-PCI-addresses-for-ARM.patch
+Patch0006: 0006-domain_conf-Add-disk-bus-sd-wire-it-up-for-qemu.patch
+Patch0007: 0007-qemu-Fix-networking-for-ARM-guests.patch
+Patch0008: 0008-qemu-Support-virtio-mmio-transport-for-virtio-on-ARM.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -438,7 +448,9 @@ BuildRequires: readline-devel
 BuildRequires: ncurses-devel
 BuildRequires: gettext
 BuildRequires: libtasn1-devel
+%if (0%{?rhel} && 0%{?rhel} < 7) || (0%{?fedora} && 0%{?fedora} < 19)
 BuildRequires: libgcrypt-devel
+%endif
 BuildRequires: gnutls-devel
 BuildRequires: libattr-devel
 %if %{with_libvirtd}
@@ -487,6 +499,9 @@ BuildRequires: avahi-devel
 %endif
 %if %{with_selinux}
 BuildRequires: libselinux-devel
+%endif
+%if %{with_apparmor}
+BuildRequires: libapparmor-devel
 %endif
 %if %{with_network}
 BuildRequires: dnsmasq >= 2.41
@@ -1147,10 +1162,8 @@ of recent versions of Linux (and other OSes).
 %prep
 %setup -q
 
-# CVE-2013-4239: xen: memory corruption in legacy driver (bz #996241, bz
-# #996244)
-%patch0001 -p1
 # Fix launching ARM guests on x86 (patches posted upstream, F20 feature)
+%patch0001 -p1
 %patch0002 -p1
 %patch0003 -p1
 %patch0004 -p1
@@ -1158,10 +1171,6 @@ of recent versions of Linux (and other OSes).
 %patch0006 -p1
 %patch0007 -p1
 %patch0008 -p1
-%patch0009 -p1
-%patch0010 -p1
-%patch0011 -p1
-%patch0012 -p1
 
 %build
 %if ! %{with_xen}
@@ -1300,6 +1309,10 @@ of recent versions of Linux (and other OSes).
     %define _without_selinux --without-selinux
 %endif
 
+%if ! %{with_apparmor}
+    %define _without_apparmor --without-apparmor
+%endif
+
 %if ! %{with_hal}
     %define _without_hal --without-hal
 %endif
@@ -1352,16 +1365,18 @@ of recent versions of Linux (and other OSes).
     %define init_scripts --with-init_script=redhat
 %endif
 
-%if 0%{?enable_autotools}
- autoreconf -if
-%endif
-
 %if %{with_selinux}
     %if 0%{?fedora} >= 17 || 0%{?rhel} >= 7
         %define with_selinux_mount --with-selinux-mount="/sys/fs/selinux"
     %else
         %define with_selinux_mount --with-selinux-mount="/selinux"
     %endif
+%endif
+
+# place macros above and build commands below this comment
+
+%if 0%{?enable_autotools}
+ autoreconf -if
 %endif
 
 %configure %{?_without_xen} \
@@ -1399,6 +1414,7 @@ of recent versions of Linux (and other OSes).
            %{?_without_netcf} \
            %{?_without_selinux} \
            %{?_with_selinux_mount} \
+           %{?_without_apparmor} \
            %{?_without_hal} \
            %{?_without_udev} \
            %{?_without_yajl} \
@@ -1413,6 +1429,8 @@ of recent versions of Linux (and other OSes).
            %{with_packager_version} \
            --with-qemu-user=%{qemu_user} \
            --with-qemu-group=%{qemu_group} \
+           %{?enable_werror} \
+           --enable-expensive-tests \
            %{init_scripts}
 make %{?_smp_mflags}
 gzip -9 ChangeLog
@@ -1470,12 +1488,6 @@ rm -f $RPM_BUILD_ROOT%{_datadir}/augeas/lenses/tests/test_libvirt_sanlock.aug
 %if ! %{with_lxc}
 rm -f $RPM_BUILD_ROOT%{_datadir}/augeas/lenses/libvirtd_lxc.aug
 rm -f $RPM_BUILD_ROOT%{_datadir}/augeas/lenses/tests/test_libvirtd_lxc.aug
-%endif
-
-%if ! %{with_python}
-rm -rf $RPM_BUILD_ROOT%{_datadir}/doc/libvirt-python-%{version}
-%else
-rm -rf $RPM_BUILD_ROOT%{_datadir}/doc/libvirt-python-%{version}/examples
 %endif
 
 %if ! %{with_qemu}
@@ -1770,6 +1782,7 @@ fi
 %config(noreplace) %{_sysconfdir}/sysconfig/libvirtd
 %config(noreplace) %{_sysconfdir}/sysconfig/virtlockd
 %config(noreplace) %{_sysconfdir}/libvirt/libvirtd.conf
+%config(noreplace) %{_sysconfdir}/libvirt/virtlockd.conf
     %if 0%{?fedora} >= 14 || 0%{?rhel} >= 6
 %config(noreplace) %{_prefix}/lib/sysctl.d/libvirtd.conf
     %endif
@@ -1811,6 +1824,7 @@ fi
     %if %{with_qemu}
 %ghost %dir %attr(0700, root, root) %{_localstatedir}/run/libvirt/qemu/
 %dir %attr(0750, %{qemu_user}, %{qemu_group}) %{_localstatedir}/lib/libvirt/qemu/
+%dir %attr(0750, %{qemu_user}, %{qemu_group}) %{_localstatedir}/lib/libvirt/qemu/channel/
 %dir %attr(0750, %{qemu_user}, %{qemu_group}) %{_localstatedir}/lib/libvirt/qemu/channel/target/
 %dir %attr(0750, %{qemu_user}, %{qemu_group}) %{_localstatedir}/cache/libvirt/qemu/
     %endif
@@ -1850,6 +1864,8 @@ fi
 
 %{_datadir}/augeas/lenses/libvirtd.aug
 %{_datadir}/augeas/lenses/tests/test_libvirtd.aug
+%{_datadir}/augeas/lenses/virtlockd.aug
+%{_datadir}/augeas/lenses/tests/test_virtlockd.aug
 %{_datadir}/augeas/lenses/libvirt_lockd.aug
 %{_datadir}/augeas/lenses/tests/test_libvirt_lockd.aug
 
@@ -1873,10 +1889,16 @@ fi
     %endif
 
 %attr(0755, root, root) %{_libexecdir}/libvirt_iohelper
+
+    %if %{with_apparmor}
+%attr(0755, root, root) %{_libexecdir}/virt-aa-helper
+    %endif
+
 %attr(0755, root, root) %{_sbindir}/libvirtd
 %attr(0755, root, root) %{_sbindir}/virtlockd
 
 %{_mandir}/man8/libvirtd.8*
+%{_mandir}/man8/virtlockd.8*
 
     %if %{with_driver_modules}
         %if %{with_network}
@@ -2012,14 +2034,17 @@ fi
 %doc AUTHORS ChangeLog.gz NEWS README COPYING COPYING.LESSER TODO
 
 %config(noreplace) %{_sysconfdir}/libvirt/libvirt.conf
+%config(noreplace) %{_sysconfdir}/libvirt/virt-login-shell.conf
 %{_mandir}/man1/virsh.1*
 %{_mandir}/man1/virt-xml-validate.1*
 %{_mandir}/man1/virt-pki-validate.1*
 %{_mandir}/man1/virt-host-validate.1*
+%{_mandir}/man1/virt-login-shell.1*
 %{_bindir}/virsh
 %{_bindir}/virt-xml-validate
 %{_bindir}/virt-pki-validate
 %{_bindir}/virt-host-validate
+%attr(4755, root, root) %{_bindir}/virt-login-shell
 %{_libdir}/lib*.so.*
 
 %if %{with_dtrace}
@@ -2095,12 +2120,14 @@ fi
 %{_libdir}/python*/site-packages/libvirt_qemu.py*
 %{_libdir}/python*/site-packages/libvirt_lxc.py*
 %{_libdir}/python*/site-packages/libvirtmod*
-%doc python/tests/*.py
 %doc examples/python
 %doc examples/domain-events/events-python
 %endif
 
 %changelog
+* Mon Sep  2 2013 Daniel P. Berrange <berrange@redhat.com> - 1.1.2-1
+- Update to 1.1.2 release
+
 * Tue Aug 20 2013 Cole Robinson <crobinso@redhat.com> - 1.1.1-3
 - Fix launching ARM guests on x86 (patches posted upstream, F20 feature)
 

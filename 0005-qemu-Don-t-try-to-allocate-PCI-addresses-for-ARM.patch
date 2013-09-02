@@ -1,17 +1,17 @@
-From d859b21108e4d45a7851c2be0a61895da66159a2 Mon Sep 17 00:00:00 2001
+From 5772cbdfb807842685d05665f285745ca79acc89 Mon Sep 17 00:00:00 2001
 From: Cole Robinson <crobinso@redhat.com>
-Date: Tue, 30 Jul 2013 18:56:15 -0400
-Subject: [PATCH] qemu: Don't try to allocate PCI addresses for ARM
+Date: Fri, 30 Aug 2013 12:41:33 -0400
+Subject: [PATCH 5/8] qemu: Don't try to allocate PCI addresses for ARM
 
 ---
  src/qemu/qemu_command.c | 16 ++++++++++++++--
  1 file changed, 14 insertions(+), 2 deletions(-)
 
 diff --git a/src/qemu/qemu_command.c b/src/qemu/qemu_command.c
-index e6000d9..66b02fc 100644
+index a8e532c..87345c7 100644
 --- a/src/qemu/qemu_command.c
 +++ b/src/qemu/qemu_command.c
-@@ -1694,6 +1694,16 @@ cleanup:
+@@ -1773,6 +1773,16 @@ cleanup:
      return ret;
  }
  
@@ -28,7 +28,7 @@ index e6000d9..66b02fc 100644
  
  int
  qemuDomainAssignPCIAddresses(virDomainDefPtr def,
-@@ -1760,8 +1770,10 @@ qemuDomainAssignPCIAddresses(virDomainDefPtr def,
+@@ -1838,8 +1848,10 @@ qemuDomainAssignPCIAddresses(virDomainDefPtr def,
          if (!(addrs = qemuDomainPCIAddressSetCreate(def, nbuses, false)))
              goto cleanup;
  
@@ -41,3 +41,6 @@ index e6000d9..66b02fc 100644
      }
  
      if (obj && obj->privateData) {
+-- 
+1.8.3.1
+

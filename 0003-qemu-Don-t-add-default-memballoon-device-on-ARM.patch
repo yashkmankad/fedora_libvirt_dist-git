@@ -1,26 +1,25 @@
-From 56aa5100965134dcc9773dcb47c2cf88b26717f9 Mon Sep 17 00:00:00 2001
+From 5ed47b89c6cb59c9ec5169bcc99a67e9a75fb2af Mon Sep 17 00:00:00 2001
 From: Cole Robinson <crobinso@redhat.com>
-Date: Tue, 30 Jul 2013 15:41:14 -0400
-Subject: [PATCH] qemu: Don't add default memballoon device on ARM
+Date: Fri, 30 Aug 2013 12:41:31 -0400
+Subject: [PATCH 3/8] qemu: Don't add default memballoon device on ARM
 
 And add test cases for a basic working ARM guest.
 ---
  docs/schemas/domaincommon.rng                      | 19 +++++++++++++
- src/conf/domain_conf.c                             | 14 ---------
  src/qemu/qemu_domain.c                             |  4 ++-
  .../qemuxml2argv-arm-vexpressa9-nodevs.args        |  5 ++++
  .../qemuxml2argv-arm-vexpressa9-nodevs.xml         | 26 +++++++++++++++++
  tests/qemuxml2argvtest.c                           |  3 ++
  tests/testutilsqemu.c                              | 33 ++++++++++++++++++++++
- 7 files changed, 89 insertions(+), 15 deletions(-)
+ 6 files changed, 89 insertions(+), 1 deletion(-)
  create mode 100644 tests/qemuxml2argvdata/qemuxml2argv-arm-vexpressa9-nodevs.args
  create mode 100644 tests/qemuxml2argvdata/qemuxml2argv-arm-vexpressa9-nodevs.xml
 
 diff --git a/docs/schemas/domaincommon.rng b/docs/schemas/domaincommon.rng
-index 745b959..781ecfd 100644
+index 6978dc7..68c3e4d 100644
 --- a/docs/schemas/domaincommon.rng
 +++ b/docs/schemas/domaincommon.rng
-@@ -303,6 +303,7 @@
+@@ -304,6 +304,7 @@
            <ref name="hvmppc"/>
            <ref name="hvmppc64"/>
            <ref name="hvms390"/>
@@ -28,7 +27,7 @@ index 745b959..781ecfd 100644
          </choice>
        </optional>
        <value>hvm</value>
-@@ -412,6 +413,24 @@
+@@ -413,6 +414,24 @@
        </optional>
      </group>
    </define>
@@ -53,51 +52,19 @@ index 745b959..781ecfd 100644
    <define name="osexe">
      <element name="os">
        <element name="type">
-diff --git a/src/conf/domain_conf.c b/src/conf/domain_conf.c
-index 18c6acf..8ede44d 100644
---- a/src/conf/domain_conf.c
-+++ b/src/conf/domain_conf.c
-@@ -8801,7 +8801,6 @@ virDomainVideoDefaultRAM(virDomainDefPtr def,
-     }
- }
- 
--
- int
- virDomainVideoDefaultType(virDomainDefPtr def)
- {
-@@ -12136,19 +12135,6 @@ virDomainDefParseXML(xmlDocPtr xml,
- 
-         def->memballoon = memballoon;
-         VIR_FREE(nodes);
--    } else {
--        if (def->virtType == VIR_DOMAIN_VIRT_XEN ||
--            def->virtType == VIR_DOMAIN_VIRT_QEMU ||
--            def->virtType == VIR_DOMAIN_VIRT_KQEMU ||
--            def->virtType == VIR_DOMAIN_VIRT_KVM) {
--            virDomainMemballoonDefPtr memballoon;
--            if (VIR_ALLOC(memballoon) < 0)
--                goto error;
--            memballoon->model = def->virtType == VIR_DOMAIN_VIRT_XEN ?
--                VIR_DOMAIN_MEMBALLOON_MODEL_XEN :
--                VIR_DOMAIN_MEMBALLOON_MODEL_VIRTIO;
--            def->memballoon = memballoon;
--        }
-     }
- 
-     /* Parse the RNG device */
 diff --git a/src/qemu/qemu_domain.c b/src/qemu/qemu_domain.c
-index dc7ab3e..36df403 100644
+index 9260301..cff6d70 100644
 --- a/src/qemu/qemu_domain.c
 +++ b/src/qemu/qemu_domain.c
-@@ -701,6 +701,7 @@ qemuDomainDefPostParse(virDomainDefPtr def,
- {
-     bool addDefaultUSB = true;
+@@ -703,6 +703,7 @@ qemuDomainDefPostParse(virDomainDefPtr def,
+     bool addImplicitSATA = false;
      bool addPCIRoot = false;
+     bool addPCIeRoot = false;
 +    bool addDefaultMemballoon = true;
  
      /* check for emulator and create a default one if needed */
      if (!def->emulator &&
-@@ -730,6 +731,7 @@ qemuDomainDefPostParse(virDomainDefPtr def,
+@@ -737,6 +738,7 @@ qemuDomainDefPostParse(virDomainDefPtr def,
  
      case VIR_ARCH_ARMV7L:
         addDefaultUSB = false;
@@ -105,9 +72,9 @@ index dc7ab3e..36df403 100644
         break;
  
      case VIR_ARCH_ALPHA:
-@@ -755,7 +757,7 @@ qemuDomainDefPostParse(virDomainDefPtr def,
-             VIR_DOMAIN_CONTROLLER_MODEL_PCI_ROOT) < 0)
-         return -1;
+@@ -785,7 +787,7 @@ qemuDomainDefPostParse(virDomainDefPtr def,
+         }
+     }
  
 -    if (!def->memballoon) {
 +    if (addDefaultMemballoon && !def->memballoon) {
@@ -158,12 +125,12 @@ index 0000000..3f318c8
 +  </devices>
 +</domain>
 diff --git a/tests/qemuxml2argvtest.c b/tests/qemuxml2argvtest.c
-index b7485fc..361ddb8 100644
+index 4e3508b..cb6106f 100644
 --- a/tests/qemuxml2argvtest.c
 +++ b/tests/qemuxml2argvtest.c
-@@ -1027,6 +1027,9 @@ mymain(void)
-     DO_TEST_PARSE_ERROR("pci-root-address",
-                         QEMU_CAPS_DEVICE, QEMU_CAPS_DEVICE_PCI_BRIDGE);
+@@ -1057,6 +1057,9 @@ mymain(void)
+             QEMU_CAPS_VGA_QXL, QEMU_CAPS_DEVICE_QXL,
+             QEMU_CAPS_Q35_PCI_HOLE64_SIZE);
  
 +    DO_TEST("arm-vexpressa9-nodevs",
 +            QEMU_CAPS_DEVICE, QEMU_CAPS_NODEFCONFIG, QEMU_CAPS_DTB);
@@ -222,3 +189,6 @@ index fac83b2..92433ef 100644
      if (virTestGetDebug()) {
          char *caps_str;
  
+-- 
+1.8.3.1
+

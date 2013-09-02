@@ -1,7 +1,7 @@
-From 2661a048446d64fa0e4f6516ca7295e6087b5ec7 Mon Sep 17 00:00:00 2001
+From 7a73b81f1021c76d02fe54f927cd033fe949590f Mon Sep 17 00:00:00 2001
 From: Cole Robinson <crobinso@redhat.com>
-Date: Tue, 30 Jul 2013 18:51:30 -0400
-Subject: [PATCH] qemu: Fix networking for ARM guests
+Date: Fri, 30 Aug 2013 12:41:35 -0400
+Subject: [PATCH 7/8] qemu: Fix networking for ARM guests
 
 Similar to the chardev bit, ARM boards depend on the old style '-net nic'
 for actually instantiating net devices. But we can't block out
@@ -19,7 +19,7 @@ And add tests for working ARM XML with console, disk, and networking.
  create mode 100644 tests/qemuxml2argvdata/qemuxml2argv-arm-vexpressa9-basic.xml
 
 diff --git a/src/qemu/qemu_command.c b/src/qemu/qemu_command.c
-index d4ab1a6..1d57ccc 100644
+index 6733709..787381b 100644
 --- a/src/qemu/qemu_command.c
 +++ b/src/qemu/qemu_command.c
 @@ -417,6 +417,26 @@ cleanup:
@@ -59,7 +59,7 @@ index d4ab1a6..1d57ccc 100644
          if (net->driver.virtio.name == VIR_DOMAIN_NET_BACKEND_TYPE_VHOST) {
              virReportError(VIR_ERR_CONFIG_UNSUPPORTED,
                             "%s", _("vhost-net is not supported with "
-@@ -6872,8 +6891,7 @@ qemuBuildInterfaceCommandLine(virCommandPtr cmd,
+@@ -7312,8 +7331,7 @@ qemuBuildInterfaceCommandLine(virCommandPtr cmd,
       *
       * NB, no support for -netdev without use of -device
       */
@@ -69,16 +69,16 @@ index d4ab1a6..1d57ccc 100644
          if (!(host = qemuBuildHostNetStr(net, driver,
                                           ',', vlan,
                                           tapfdName, tapfdSize,
-@@ -6881,7 +6899,7 @@ qemuBuildInterfaceCommandLine(virCommandPtr cmd,
+@@ -7321,7 +7339,7 @@ qemuBuildInterfaceCommandLine(virCommandPtr cmd,
              goto cleanup;
          virCommandAddArgList(cmd, "-netdev", host, NULL);
      }
 -    if (virQEMUCapsGet(qemuCaps, QEMU_CAPS_DEVICE)) {
 +    if (qemuDomainSupportsNicdev(def, qemuCaps)) {
-         if (!(nic = qemuBuildNicDevStr(net, vlan, bootindex, qemuCaps)))
-             goto cleanup;
-         virCommandAddArgList(cmd, "-device", nic, NULL);
-@@ -6890,8 +6908,7 @@ qemuBuildInterfaceCommandLine(virCommandPtr cmd,
+         bool multiqueue = tapfdSize > 1 || vhostfdSize > 1;
+ 
+         if (!(nic = qemuBuildNicDevStr(def, net, vlan, bootindex,
+@@ -7333,8 +7351,7 @@ qemuBuildInterfaceCommandLine(virCommandPtr cmd,
              goto cleanup;
          virCommandAddArgList(cmd, "-net", nic, NULL);
      }
@@ -88,7 +88,7 @@ index d4ab1a6..1d57ccc 100644
          if (!(host = qemuBuildHostNetStr(net, driver,
                                           ',', vlan,
                                           tapfdName, tapfdSize,
-@@ -7888,8 +7905,7 @@ qemuBuildCommandLine(virConnectPtr conn,
+@@ -8385,8 +8402,7 @@ qemuBuildCommandLine(virConnectPtr conn,
              int vlan;
  
              /* VLANs are not used with -netdev, so don't record them */
@@ -99,10 +99,10 @@ index d4ab1a6..1d57ccc 100644
              else
                  vlan = i;
 diff --git a/src/qemu/qemu_domain.c b/src/qemu/qemu_domain.c
-index 36df403..0b3503a 100644
+index cff6d70..30588fb 100644
 --- a/src/qemu/qemu_domain.c
 +++ b/src/qemu/qemu_domain.c
-@@ -769,6 +769,23 @@ qemuDomainDefPostParse(virDomainDefPtr def,
+@@ -799,6 +799,23 @@ qemuDomainDefPostParse(virDomainDefPtr def,
      return 0;
  }
  
@@ -126,7 +126,7 @@ index 36df403..0b3503a 100644
  
  static int
  qemuDomainDeviceDefPostParse(virDomainDeviceDefPtr dev,
-@@ -784,8 +801,7 @@ qemuDomainDeviceDefPostParse(virDomainDeviceDefPtr dev,
+@@ -814,8 +831,7 @@ qemuDomainDeviceDefPostParse(virDomainDeviceDefPtr dev,
          dev->data.net->type != VIR_DOMAIN_NET_TYPE_HOSTDEV &&
          !dev->data.net->model) {
          if (VIR_STRDUP(dev->data.net->model,
@@ -191,10 +191,10 @@ index 0000000..ec9374f
 +  </devices>
 +</domain>
 diff --git a/tests/qemuxml2argvtest.c b/tests/qemuxml2argvtest.c
-index 361ddb8..0bf2724 100644
+index cb6106f..6ecabbf 100644
 --- a/tests/qemuxml2argvtest.c
 +++ b/tests/qemuxml2argvtest.c
-@@ -1029,6 +1029,9 @@ mymain(void)
+@@ -1059,6 +1059,9 @@ mymain(void)
  
      DO_TEST("arm-vexpressa9-nodevs",
              QEMU_CAPS_DEVICE, QEMU_CAPS_NODEFCONFIG, QEMU_CAPS_DTB);
@@ -204,3 +204,6 @@ index 361ddb8..0bf2724 100644
  
      virObjectUnref(driver.config);
      virObjectUnref(driver.caps);
+-- 
+1.8.3.1
+

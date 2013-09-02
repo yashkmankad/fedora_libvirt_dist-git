@@ -1,7 +1,7 @@
-From a0d15c46d153d5574f68e18ea2f027cdb98e9390 Mon Sep 17 00:00:00 2001
+From 019eccdb20e824aabb12da3699664ba2625ef4b4 Mon Sep 17 00:00:00 2001
 From: Cole Robinson <crobinso@redhat.com>
-Date: Wed, 31 Jul 2013 09:00:26 -0400
-Subject: [PATCH] domain_conf: Add disk bus=sd, wire it up for qemu
+Date: Fri, 30 Aug 2013 12:41:34 -0400
+Subject: [PATCH 6/8] domain_conf: Add disk bus=sd, wire it up for qemu
 
 This corresponds to '-sd' and '-drive if=sd' on the qemu command line.
 Needed for many ARM boards which don't provide any other way to
@@ -15,10 +15,10 @@ pass in storage.
  5 files changed, 22 insertions(+), 7 deletions(-)
 
 diff --git a/docs/formatdomain.html.in b/docs/formatdomain.html.in
-index 78e132e..1314806 100644
+index cce179d..af9b4ae 100644
 --- a/docs/formatdomain.html.in
 +++ b/docs/formatdomain.html.in
-@@ -1660,7 +1660,8 @@
+@@ -1785,7 +1785,8 @@
          as a device ordering hint.  The optional <code>bus</code>
          attribute specifies the type of disk device to emulate;
          possible values are driver specific, with typical values being
@@ -29,10 +29,10 @@ index 78e132e..1314806 100644
          'sda' will typically be exported using a SCSI bus). The optional
          attribute <code>tray</code> indicates the tray status of the
 diff --git a/docs/schemas/domaincommon.rng b/docs/schemas/domaincommon.rng
-index 781ecfd..4f4564b 100644
+index 68c3e4d..79ea746 100644
 --- a/docs/schemas/domaincommon.rng
 +++ b/docs/schemas/domaincommon.rng
-@@ -1286,6 +1286,7 @@
+@@ -1295,6 +1295,7 @@
              <value>usb</value>
              <value>uml</value>
              <value>sata</value>
@@ -41,7 +41,7 @@ index 781ecfd..4f4564b 100644
          </attribute>
        </optional>
 diff --git a/src/conf/domain_conf.c b/src/conf/domain_conf.c
-index 8ede44d..5485d86 100644
+index fafbb89..2c62a2d 100644
 --- a/src/conf/domain_conf.c
 +++ b/src/conf/domain_conf.c
 @@ -239,7 +239,8 @@ VIR_ENUM_IMPL(virDomainDiskBus, VIR_DOMAIN_DISK_BUS_LAST,
@@ -54,7 +54,7 @@ index 8ede44d..5485d86 100644
  
  VIR_ENUM_IMPL(virDomainDiskCache, VIR_DOMAIN_DISK_CACHE_LAST,
                "default",
-@@ -17227,6 +17228,7 @@ virDiskNameToBusDeviceIndex(const virDomainDiskDefPtr disk,
+@@ -17308,6 +17309,7 @@ virDiskNameToBusDeviceIndex(const virDomainDiskDefPtr disk,
          case VIR_DOMAIN_DISK_BUS_USB:
          case VIR_DOMAIN_DISK_BUS_VIRTIO:
          case VIR_DOMAIN_DISK_BUS_XEN:
@@ -63,10 +63,10 @@ index 8ede44d..5485d86 100644
              *busIdx = 0;
              *devIdx = idx;
 diff --git a/src/conf/domain_conf.h b/src/conf/domain_conf.h
-index abf024c..cf075e1 100644
+index 56739b7..380e2bb 100644
 --- a/src/conf/domain_conf.h
 +++ b/src/conf/domain_conf.h
-@@ -508,6 +508,7 @@ enum virDomainDiskBus {
+@@ -509,6 +509,7 @@ enum virDomainDiskBus {
      VIR_DOMAIN_DISK_BUS_USB,
      VIR_DOMAIN_DISK_BUS_UML,
      VIR_DOMAIN_DISK_BUS_SATA,
@@ -75,7 +75,7 @@ index abf024c..cf075e1 100644
      VIR_DOMAIN_DISK_BUS_LAST
  };
 diff --git a/src/qemu/qemu_command.c b/src/qemu/qemu_command.c
-index 66b02fc..d4ab1a6 100644
+index 87345c7..6733709 100644
 --- a/src/qemu/qemu_command.c
 +++ b/src/qemu/qemu_command.c
 @@ -73,7 +73,8 @@ VIR_ENUM_IMPL(virDomainDiskQEMUBus, VIR_DOMAIN_DISK_BUS_LAST,
@@ -98,7 +98,7 @@ index 66b02fc..d4ab1a6 100644
      default:
          virReportError(VIR_ERR_CONFIG_UNSUPPORTED,
                         _("Unsupported disk name mapping for bus '%s'"),
-@@ -3406,7 +3410,9 @@ qemuBuildDriveStr(virConnectPtr conn ATTRIBUTE_UNUSED,
+@@ -3786,7 +3790,9 @@ qemuBuildDriveStr(virConnectPtr conn ATTRIBUTE_UNUSED,
          break;
  
      case VIR_DOMAIN_DISK_BUS_XEN:
@@ -109,7 +109,7 @@ index 66b02fc..d4ab1a6 100644
          break;
      }
  
-@@ -7693,12 +7699,13 @@ qemuBuildCommandLine(virConnectPtr conn,
+@@ -8190,12 +8196,13 @@ qemuBuildCommandLine(virConnectPtr conn,
              virCommandAddArg(cmd, "-drive");
  
              /* Unfortunately it is not possible to use
@@ -125,7 +125,7 @@ index 66b02fc..d4ab1a6 100644
                      withDeviceArg = true;
                  } else {
                      virQEMUCapsClear(qemuCaps, QEMU_CAPS_DEVICE);
-@@ -9383,6 +9390,8 @@ qemuParseCommandLineDisk(virDomainXMLOptionPtr xmlopt,
+@@ -9892,6 +9899,8 @@ qemuParseCommandLineDisk(virDomainXMLOptionPtr xmlopt,
                  def->bus = VIR_DOMAIN_DISK_BUS_VIRTIO;
              else if (STREQ(values[i], "xen"))
                  def->bus = VIR_DOMAIN_DISK_BUS_XEN;
@@ -134,7 +134,7 @@ index 66b02fc..d4ab1a6 100644
          } else if (STREQ(keywords[i], "media")) {
              if (STREQ(values[i], "cdrom")) {
                  def->device = VIR_DOMAIN_DISK_DEVICE_CDROM;
-@@ -9532,7 +9541,8 @@ qemuParseCommandLineDisk(virDomainXMLOptionPtr xmlopt,
+@@ -10041,7 +10050,8 @@ qemuParseCommandLineDisk(virDomainXMLOptionPtr xmlopt,
  
      if (def->bus == VIR_DOMAIN_DISK_BUS_IDE) {
          ignore_value(VIR_STRDUP(def->dst, "hda"));
@@ -144,3 +144,6 @@ index 66b02fc..d4ab1a6 100644
          ignore_value(VIR_STRDUP(def->dst, "sda"));
      } else if (def->bus == VIR_DOMAIN_DISK_BUS_VIRTIO) {
          ignore_value(VIR_STRDUP(def->dst, "vda"));
+-- 
+1.8.3.1
+

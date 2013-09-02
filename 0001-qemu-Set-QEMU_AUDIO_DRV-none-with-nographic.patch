@@ -1,7 +1,7 @@
-From d77c4e688131be9ae811e1d650f4fdcc9fc1cee2 Mon Sep 17 00:00:00 2001
+From cc80f2dc06d46cb32a5cd6d12c6c47ddf64e72b6 Mon Sep 17 00:00:00 2001
 From: Cole Robinson <crobinso@redhat.com>
-Date: Sat, 17 Aug 2013 15:30:47 -0400
-Subject: [PATCH] qemu: Set QEMU_AUDIO_DRV=none with -nographic
+Date: Mon, 2 Sep 2013 11:23:59 +0100
+Subject: [PATCH 1/8] qemu: Set QEMU_AUDIO_DRV=none with -nographic
 
 On my machine, a guest fails to boot if it has a sound card, but not
 graphical device/display is configured, because pulseaudio fails to
@@ -12,295 +12,368 @@ isn't any option to do that, so -nographic always fails.
 
 Set QEMU_AUDIO_DRV=none if no <graphics> are configured. Unfortunately
 this has massive test suite fallout.
----
- src/qemu/qemu_command.c                                            | 7 ++++++-
- tests/qemuxml2argvdata/qemuxml2argv-balloon-device-auto.args       | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-balloon-device-period.args     | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-balloon-device.args            | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-bios.args                      | 2 +-
- tests/qemuxml2argvdata/qemuxml2argv-blkdeviotune.args              | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-blkiotune-device.args          | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-blkiotune.args                 | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-boot-cdrom.args                | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-boot-complex-bootindex.args    | 2 +-
- tests/qemuxml2argvdata/qemuxml2argv-boot-complex.args              | 2 +-
- tests/qemuxml2argvdata/qemuxml2argv-boot-floppy.args               | 3 ++-
- .../qemuxml2argv-boot-menu-disable-drive-bootindex.args            | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-boot-menu-disable-drive.args   | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-boot-menu-disable.args         | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-boot-menu-enable.args          | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-boot-multi.args                | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-boot-network.args              | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-boot-order.args                | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-bootloader.args                | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-channel-guestfwd.args          | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-channel-virtio-auto.args       | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-channel-virtio.args            | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-clock-france.args              | 4 ++--
- tests/qemuxml2argvdata/qemuxml2argv-clock-localtime.args           | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-clock-utc.args                 | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-clock-variable.args            | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-console-compat-auto.args       | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-console-compat-chardev.args    | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-console-compat.args            | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-console-sclp.args              | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-console-virtio-ccw.args        | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-console-virtio-many.args       | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-console-virtio-s390.args       | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-console-virtio.args            | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-cpu-eoi-disabled.args          | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-cpu-eoi-enabled.args           | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-cpu-exact1.args                | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-cpu-exact2-nofallback.args     | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-cpu-exact2.args                | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-cpu-fallback.args              | 2 +-
- tests/qemuxml2argvdata/qemuxml2argv-cpu-host-kvmclock.args         | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-cpu-host-model-fallback.args   | 2 +-
- tests/qemuxml2argvdata/qemuxml2argv-cpu-host-model.args            | 2 +-
- tests/qemuxml2argvdata/qemuxml2argv-cpu-host-passthrough.args      | 2 +-
- tests/qemuxml2argvdata/qemuxml2argv-cpu-kvmclock.args              | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-cpu-minimum1.args              | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-cpu-minimum2.args              | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-cpu-numa1.args                 | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-cpu-numa2.args                 | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-cpu-strict1.args               | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-cpu-topology1.args             | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-cpu-topology2.args             | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-cpu-topology3.args             | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-cputune.args                   | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-disk-aio.args                  | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-disk-blockio.args              | 2 +-
- tests/qemuxml2argvdata/qemuxml2argv-disk-cdrom-empty.args          | 3 ++-
- .../qemuxml2argv-disk-cdrom-tray-no-device-cap.args                | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-disk-cdrom-tray.args           | 2 +-
- tests/qemuxml2argvdata/qemuxml2argv-disk-cdrom.args                | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-disk-copy_on_read.args         | 2 +-
- tests/qemuxml2argvdata/qemuxml2argv-disk-drive-boot-cdrom.args     | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-disk-drive-boot-disk.args      | 3 ++-
- .../qemuxml2argvdata/qemuxml2argv-disk-drive-cache-directsync.args | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-disk-drive-cache-unsafe.args   | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-disk-drive-cache-v1-none.args  | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-disk-drive-cache-v1-wb.args    | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-disk-drive-cache-v1-wt.args    | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-disk-drive-cache-v2-none.args  | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-disk-drive-cache-v2-wb.args    | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-disk-drive-cache-v2-wt.args    | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-disk-drive-discard.args        | 2 +-
- .../qemuxml2argv-disk-drive-error-policy-enospace.args             | 3 ++-
- .../qemuxml2argv-disk-drive-error-policy-stop.args                 | 3 ++-
- .../qemuxml2argv-disk-drive-error-policy-wreport-rignore.args      | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-disk-drive-fat.args            | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-disk-drive-fmt-qcow.args       | 3 ++-
- .../qemuxml2argvdata/qemuxml2argv-disk-drive-network-gluster.args  | 3 ++-
- .../qemuxml2argv-disk-drive-network-iscsi-auth.args                | 3 ++-
- .../qemuxml2argv-disk-drive-network-iscsi-lun.args                 | 2 +-
- tests/qemuxml2argvdata/qemuxml2argv-disk-drive-network-iscsi.args  | 3 ++-
- .../qemuxml2argv-disk-drive-network-nbd-export.args                | 3 ++-
- .../qemuxml2argv-disk-drive-network-nbd-ipv6-export.args           | 3 ++-
- .../qemuxml2argvdata/qemuxml2argv-disk-drive-network-nbd-ipv6.args | 3 ++-
- .../qemuxml2argvdata/qemuxml2argv-disk-drive-network-nbd-unix.args | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-disk-drive-network-nbd.args    | 3 ++-
- .../qemuxml2argvdata/qemuxml2argv-disk-drive-network-rbd-auth.args | 2 +-
- .../qemuxml2argv-disk-drive-network-rbd-ceph-env.args              | 4 ++--
- .../qemuxml2argvdata/qemuxml2argv-disk-drive-network-rbd-ipv6.args | 2 +-
- tests/qemuxml2argvdata/qemuxml2argv-disk-drive-network-rbd.args    | 2 +-
- .../qemuxml2argvdata/qemuxml2argv-disk-drive-network-sheepdog.args | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-disk-drive-no-boot.args        | 2 +-
- tests/qemuxml2argvdata/qemuxml2argv-disk-drive-readonly-disk.args  | 3 ++-
- .../qemuxml2argv-disk-drive-readonly-no-device.args                | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-disk-drive-shared.args         | 3 ++-
- .../qemuxml2argv-disk-floppy-tray-no-device-cap.args               | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-disk-floppy-tray.args          | 2 +-
- tests/qemuxml2argvdata/qemuxml2argv-disk-floppy.args               | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-disk-geometry.args             | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-disk-ide-drive-split.args      | 2 +-
- tests/qemuxml2argvdata/qemuxml2argv-disk-ide-wwn.args              | 2 +-
- tests/qemuxml2argvdata/qemuxml2argv-disk-ioeventfd.args            | 2 +-
- tests/qemuxml2argvdata/qemuxml2argv-disk-many.args                 | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-disk-order.args                | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-disk-sata-device.args          | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-disk-scsi-device-auto.args     | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-disk-scsi-device.args          | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-disk-scsi-disk-split.args      | 2 +-
- tests/qemuxml2argvdata/qemuxml2argv-disk-scsi-disk-vpd.args        | 2 +-
- tests/qemuxml2argvdata/qemuxml2argv-disk-scsi-disk-wwn.args        | 2 +-
- tests/qemuxml2argvdata/qemuxml2argv-disk-scsi-lun-passthrough.args | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-disk-scsi-megasas.args         | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-disk-scsi-virtio-scsi.args     | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-disk-scsi-vscsi.args           | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-disk-snapshot.args             | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-disk-usb-device.args           | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-disk-usb.args                  | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-disk-virtio-ccw-many.args      | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-disk-virtio-ccw.args           | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-disk-virtio-s390.args          | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-disk-virtio-scsi-ccw.args      | 3 ++-
- .../qemuxml2argvdata/qemuxml2argv-disk-virtio-scsi-num_queues.args | 2 +-
- tests/qemuxml2argvdata/qemuxml2argv-disk-virtio.args               | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-disk-xenvbd.args               | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-eoi-disabled.args              | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-eoi-enabled.args               | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-event_idx.args                 | 2 +-
- tests/qemuxml2argvdata/qemuxml2argv-floppy-drive-fat.args          | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-fs9p.args                      | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-graphics-vnc-sasl.args         | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-graphics-vnc-tls.args          | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-graphics-vnc-websocket.args    | 3 ++-
- .../qemuxml2argvdata/qemuxml2argv-hostdev-pci-address-device.args  | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-hostdev-pci-address.args       | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-hostdev-scsi-boot.args         | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-hostdev-scsi-lsi.args          | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-hostdev-scsi-readonly.args     | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-hostdev-scsi-virtio-scsi.args  | 3 ++-
- .../qemuxml2argv-hostdev-usb-address-device-boot.args              | 3 ++-
- .../qemuxml2argvdata/qemuxml2argv-hostdev-usb-address-device.args  | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-hostdev-usb-address.args       | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-hostdev-vfio.args              | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-hugepages.args                 | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-hyperv-off.args                | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-hyperv.args                    | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-input-usbmouse-addr.args       | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-input-usbmouse.args            | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-input-usbtablet.args           | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-kvm.args                       | 2 +-
- tests/qemuxml2argvdata/qemuxml2argv-kvmclock+eoi-disabled.args     | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-kvmclock.args                  | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-lease.args                     | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-machine-aliases1.args          | 2 +-
- tests/qemuxml2argvdata/qemuxml2argv-machine-aliases2.args          | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-machine-core-off.args          | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-machine-core-on.args           | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-machine-usb-opt.args           | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-memtune.args                   | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-metadata.args                  | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-migrate.args                   | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-minimal-s390.args              | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-minimal.args                   | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-misc-acpi.args                 | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-misc-disable-s3.args           | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-misc-disable-suspends.args     | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-misc-enable-s4.args            | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-misc-no-reboot.args            | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-misc-uuid.args                 | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-mlock-off.args                 | 2 +-
- tests/qemuxml2argvdata/qemuxml2argv-mlock-on.args                  | 2 +-
- tests/qemuxml2argvdata/qemuxml2argv-mlock-unsupported.args         | 2 +-
- tests/qemuxml2argvdata/qemuxml2argv-monitor-json.args              | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-multifunction-pci-device.args  | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-net-client.args                | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-net-eth-ifname.args            | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-net-eth-names.args             | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-net-eth.args                   | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-net-hostdev-vfio.args          | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-net-hostdev.args               | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-net-mcast.args                 | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-net-server.args                | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-net-user.args                  | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-net-virtio-ccw.args            | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-net-virtio-device.args         | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-net-virtio-netdev.args         | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-net-virtio-s390.args           | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-net-virtio.args                | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-no-shutdown.args               | 2 +-
- tests/qemuxml2argvdata/qemuxml2argv-nographics-vga.args            | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-nographics.args                | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-nosharepages.args              | 3 ++-
- .../qemuxml2argv-numad-auto-memory-vcpu-cpuset.args                | 3 ++-
- ...emuxml2argv-numad-auto-memory-vcpu-no-cpuset-and-placement.args | 3 ++-
- .../qemuxml2argv-numad-auto-vcpu-static-numatune.args              | 3 ++-
- .../qemuxml2argv-numad-static-memory-auto-vcpu.args                | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-numad.args                     | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-numatune-memory.args           | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-parallel-parport-chardev.args  | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-parallel-tcp-chardev.args      | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-parallel-tcp.args              | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-pci-autoadd-addr.args          | 2 +-
- tests/qemuxml2argvdata/qemuxml2argv-pci-autoadd-idx.args           | 2 +-
- tests/qemuxml2argvdata/qemuxml2argv-pci-bridge-many-disks.args     | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-pci-rom.args                   | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-ppc-dtb.args                   | 2 +-
- tests/qemuxml2argvdata/qemuxml2argv-pseries-basic.args             | 2 +-
- tests/qemuxml2argvdata/qemuxml2argv-pseries-nvram.args             | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-pseries-usb-default.args       | 2 +-
- tests/qemuxml2argvdata/qemuxml2argv-pseries-usb-multi.args         | 2 +-
- tests/qemuxml2argvdata/qemuxml2argv-pseries-vio-user-assigned.args | 2 +-
- tests/qemuxml2argvdata/qemuxml2argv-pseries-vio.args               | 2 +-
- tests/qemuxml2argvdata/qemuxml2argv-qemu-ns-no-env.args            | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-qemu-ns.args                   | 4 ++--
- tests/qemuxml2argvdata/qemuxml2argv-reboot-timeout-disabled.args   | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-reboot-timeout-enabled.args    | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-restore-v1.args                | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-restore-v2-fd.args             | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-restore-v2.args                | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-s390-piix-controllers.args     | 2 +-
- tests/qemuxml2argvdata/qemuxml2argv-s390-usb-none.args             | 2 +-
- .../qemuxml2argvdata/qemuxml2argv-seclabel-dynamic-baselabel.args  | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-seclabel-dynamic-override.args | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-seclabel-dynamic.args          | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-seclabel-none.args             | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-seclabel-static-relabel.args   | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-seclabel-static.args           | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-serial-dev-chardev.args        | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-serial-dev.args                | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-serial-file-chardev.args       | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-serial-file.args               | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-serial-many-chardev.args       | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-serial-many.args               | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-serial-pty-chardev.args        | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-serial-pty.args                | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-serial-tcp-chardev.args        | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-serial-tcp-telnet-chardev.args | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-serial-tcp-telnet.args         | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-serial-tcp.args                | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-serial-udp-chardev.args        | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-serial-udp.args                | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-serial-unix-chardev.args       | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-serial-unix.args               | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-serial-vc-chardev.args         | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-serial-vc.args                 | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-smartcard-controller.args      | 3 ++-
- .../qemuxml2argvdata/qemuxml2argv-smartcard-host-certificates.args | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-smartcard-host.args            | 3 ++-
- .../qemuxml2argv-smartcard-passthrough-spicevmc.args               | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-smartcard-passthrough-tcp.args | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-smbios.args                    | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-smp.args                       | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-sound-device.args              | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-sound.args                     | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-tpm-passthrough.args           | 2 +-
- tests/qemuxml2argvdata/qemuxml2argv-usb-controller.args            | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-usb-hub.args                   | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-usb-ich9-companion.args        | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-usb-ich9-ehci-addr.args        | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-usb-none.args                  | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-usb-piix3-controller.args      | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-usb-ports.args                 | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-usb-redir-boot.args            | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-usb-redir-filter.args          | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-usb-redir.args                 | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-usb1-usb2.args                 | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-virtio-lun.args                | 2 +-
- tests/qemuxml2argvdata/qemuxml2argv-virtio-rng-ccw.args            | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-virtio-rng-default.args        | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-virtio-rng-egd.args            | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-virtio-rng-random.args         | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-watchdog-device.args           | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-watchdog-dump.args             | 3 ++-
- tests/qemuxml2argvdata/qemuxml2argv-watchdog.args                  | 3 ++-
- tests/qemuxmlnsdata/qemuxmlns-qemu-ns-commandline-ns0.args         | 2 +-
- tests/qemuxmlnsdata/qemuxmlns-qemu-ns-commandline-ns1.args         | 2 +-
- tests/qemuxmlnsdata/qemuxmlns-qemu-ns-commandline.args             | 2 +-
- tests/qemuxmlnsdata/qemuxmlns-qemu-ns-domain-commandline-ns0.args  | 2 +-
- tests/qemuxmlnsdata/qemuxmlns-qemu-ns-domain-commandline.args      | 2 +-
- tests/qemuxmlnsdata/qemuxmlns-qemu-ns-domain-ns0.args              | 2 +-
- tests/qemuxmlnsdata/qemuxmlns-qemu-ns-domain.args                  | 2 +-
- 281 files changed, 516 insertions(+), 284 deletions(-)
 
+Add a qemu.conf parameter nographics_allow_host_audio, that if enabled
+will pass through QEMU_AUDIO_DRV from sysconfig (similar to
+vnc_allow_host_audio)
+---
+ src/qemu/libvirtd_qemu.aug                                       | 3 +++
+ src/qemu/qemu.conf                                               | 9 +++++++++
+ src/qemu/qemu_cgroup.c                                           | 2 +-
+ src/qemu/qemu_command.c                                          | 9 ++++++++-
+ src/qemu/qemu_conf.c                                             | 1 +
+ src/qemu/qemu_conf.h                                             | 1 +
+ src/qemu/test_libvirtd_qemu.aug.in                               | 1 +
+ tests/qemuxml2argvdata/qemuxml2argv-balloon-device-auto.args     | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-balloon-device-period.args   | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-balloon-device.args          | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-bios.args                    | 2 +-
+ tests/qemuxml2argvdata/qemuxml2argv-blkdeviotune.args            | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-blkiotune-device.args        | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-blkiotune.args               | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-boot-cdrom.args              | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-boot-complex-bootindex.args  | 2 +-
+ tests/qemuxml2argvdata/qemuxml2argv-boot-complex.args            | 2 +-
+ tests/qemuxml2argvdata/qemuxml2argv-boot-floppy.args             | 3 ++-
+ .../qemuxml2argv-boot-menu-disable-drive-bootindex.args          | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-boot-menu-disable-drive.args | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-boot-menu-disable.args       | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-boot-menu-enable.args        | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-boot-multi.args              | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-boot-network.args            | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-boot-order.args              | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-bootloader.args              | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-channel-guestfwd.args        | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-channel-virtio-auto.args     | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-channel-virtio.args          | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-clock-france.args            | 4 ++--
+ tests/qemuxml2argvdata/qemuxml2argv-clock-localtime.args         | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-clock-utc.args               | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-clock-variable.args          | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-console-compat-auto.args     | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-console-compat-chardev.args  | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-console-compat.args          | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-console-sclp.args            | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-console-virtio-ccw.args      | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-console-virtio-many.args     | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-console-virtio-s390.args     | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-console-virtio.args          | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-cpu-eoi-disabled.args        | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-cpu-eoi-enabled.args         | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-cpu-exact1.args              | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-cpu-exact2-nofallback.args   | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-cpu-exact2.args              | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-cpu-fallback.args            | 2 +-
+ tests/qemuxml2argvdata/qemuxml2argv-cpu-host-kvmclock.args       | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-cpu-host-model-fallback.args | 2 +-
+ tests/qemuxml2argvdata/qemuxml2argv-cpu-host-model.args          | 2 +-
+ tests/qemuxml2argvdata/qemuxml2argv-cpu-host-passthrough.args    | 2 +-
+ tests/qemuxml2argvdata/qemuxml2argv-cpu-kvmclock.args            | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-cpu-minimum1.args            | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-cpu-minimum2.args            | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-cpu-numa1.args               | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-cpu-numa2.args               | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-cpu-strict1.args             | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-cpu-topology1.args           | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-cpu-topology2.args           | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-cpu-topology3.args           | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-cputune.args                 | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-disk-aio.args                | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-disk-blockio.args            | 2 +-
+ tests/qemuxml2argvdata/qemuxml2argv-disk-cdrom-empty.args        | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-disk-cdrom-network-ftp.args  | 2 +-
+ tests/qemuxml2argvdata/qemuxml2argv-disk-cdrom-network-http.args | 2 +-
+ .../qemuxml2argv-disk-cdrom-tray-no-device-cap.args              | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-disk-cdrom-tray.args         | 2 +-
+ tests/qemuxml2argvdata/qemuxml2argv-disk-cdrom.args              | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-disk-copy_on_read.args       | 2 +-
+ tests/qemuxml2argvdata/qemuxml2argv-disk-drive-boot-cdrom.args   | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-disk-drive-boot-disk.args    | 3 ++-
+ .../qemuxml2argv-disk-drive-cache-directsync.args                | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-disk-drive-cache-unsafe.args | 3 ++-
+ .../qemuxml2argvdata/qemuxml2argv-disk-drive-cache-v1-none.args  | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-disk-drive-cache-v1-wb.args  | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-disk-drive-cache-v1-wt.args  | 3 ++-
+ .../qemuxml2argvdata/qemuxml2argv-disk-drive-cache-v2-none.args  | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-disk-drive-cache-v2-wb.args  | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-disk-drive-cache-v2-wt.args  | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-disk-drive-discard.args      | 2 +-
+ .../qemuxml2argv-disk-drive-error-policy-enospace.args           | 3 ++-
+ .../qemuxml2argv-disk-drive-error-policy-stop.args               | 3 ++-
+ .../qemuxml2argv-disk-drive-error-policy-wreport-rignore.args    | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-disk-drive-fat.args          | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-disk-drive-fmt-qcow.args     | 3 ++-
+ .../qemuxml2argv-disk-drive-network-gluster.args                 | 3 ++-
+ .../qemuxml2argv-disk-drive-network-iscsi-auth.args              | 3 ++-
+ .../qemuxml2argv-disk-drive-network-iscsi-lun.args               | 2 +-
+ .../qemuxml2argvdata/qemuxml2argv-disk-drive-network-iscsi.args  | 3 ++-
+ .../qemuxml2argv-disk-drive-network-nbd-export.args              | 3 ++-
+ .../qemuxml2argv-disk-drive-network-nbd-ipv6-export.args         | 3 ++-
+ .../qemuxml2argv-disk-drive-network-nbd-ipv6.args                | 3 ++-
+ .../qemuxml2argv-disk-drive-network-nbd-unix.args                | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-disk-drive-network-nbd.args  | 3 ++-
+ .../qemuxml2argv-disk-drive-network-rbd-auth.args                | 2 +-
+ .../qemuxml2argv-disk-drive-network-rbd-ceph-env.args            | 4 ++--
+ .../qemuxml2argv-disk-drive-network-rbd-ipv6.args                | 2 +-
+ tests/qemuxml2argvdata/qemuxml2argv-disk-drive-network-rbd.args  | 2 +-
+ .../qemuxml2argv-disk-drive-network-sheepdog.args                | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-disk-drive-no-boot.args      | 2 +-
+ .../qemuxml2argvdata/qemuxml2argv-disk-drive-readonly-disk.args  | 3 ++-
+ .../qemuxml2argv-disk-drive-readonly-no-device.args              | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-disk-drive-shared.args       | 3 ++-
+ .../qemuxml2argv-disk-floppy-tray-no-device-cap.args             | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-disk-floppy-tray.args        | 2 +-
+ tests/qemuxml2argvdata/qemuxml2argv-disk-floppy.args             | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-disk-geometry.args           | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-disk-ide-drive-split.args    | 2 +-
+ tests/qemuxml2argvdata/qemuxml2argv-disk-ide-wwn.args            | 2 +-
+ tests/qemuxml2argvdata/qemuxml2argv-disk-ioeventfd.args          | 2 +-
+ tests/qemuxml2argvdata/qemuxml2argv-disk-many.args               | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-disk-order.args              | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-disk-sata-device.args        | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-disk-scsi-device-auto.args   | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-disk-scsi-device.args        | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-disk-scsi-disk-split.args    | 2 +-
+ tests/qemuxml2argvdata/qemuxml2argv-disk-scsi-disk-vpd.args      | 2 +-
+ tests/qemuxml2argvdata/qemuxml2argv-disk-scsi-disk-wwn.args      | 2 +-
+ .../qemuxml2argvdata/qemuxml2argv-disk-scsi-lun-passthrough.args | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-disk-scsi-megasas.args       | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-disk-scsi-virtio-scsi.args   | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-disk-scsi-vscsi.args         | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-disk-snapshot.args           | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-disk-usb-device.args         | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-disk-usb.args                | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-disk-virtio-ccw-many.args    | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-disk-virtio-ccw.args         | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-disk-virtio-s390.args        | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-disk-virtio-scsi-ccw.args    | 3 ++-
+ .../qemuxml2argv-disk-virtio-scsi-num_queues.args                | 2 +-
+ tests/qemuxml2argvdata/qemuxml2argv-disk-virtio.args             | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-disk-xenvbd.args             | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-eoi-disabled.args            | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-eoi-enabled.args             | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-event_idx.args               | 2 +-
+ tests/qemuxml2argvdata/qemuxml2argv-floppy-drive-fat.args        | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-fs9p.args                    | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-graphics-vnc-sasl.args       | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-graphics-vnc-tls.args        | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-graphics-vnc-websocket.args  | 3 ++-
+ .../qemuxml2argv-hostdev-pci-address-device.args                 | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-hostdev-pci-address.args     | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-hostdev-scsi-boot.args       | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-hostdev-scsi-lsi.args        | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-hostdev-scsi-readonly.args   | 3 ++-
+ .../qemuxml2argvdata/qemuxml2argv-hostdev-scsi-virtio-scsi.args  | 3 ++-
+ .../qemuxml2argv-hostdev-usb-address-device-boot.args            | 3 ++-
+ .../qemuxml2argv-hostdev-usb-address-device.args                 | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-hostdev-usb-address.args     | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-hostdev-vfio.args            | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-hotplug-base.args            | 2 +-
+ tests/qemuxml2argvdata/qemuxml2argv-hugepages.args               | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-hyperv-off.args              | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-hyperv.args                  | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-input-usbmouse-addr.args     | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-input-usbmouse.args          | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-input-usbtablet.args         | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-kvm.args                     | 2 +-
+ tests/qemuxml2argvdata/qemuxml2argv-kvmclock+eoi-disabled.args   | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-kvmclock.args                | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-lease.args                   | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-machine-aliases1.args        | 2 +-
+ tests/qemuxml2argvdata/qemuxml2argv-machine-aliases2.args        | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-machine-core-off.args        | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-machine-core-on.args         | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-machine-usb-opt.args         | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-memtune.args                 | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-metadata.args                | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-migrate.args                 | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-minimal-s390.args            | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-minimal.args                 | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-misc-acpi.args               | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-misc-disable-s3.args         | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-misc-disable-suspends.args   | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-misc-enable-s4.args          | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-misc-no-reboot.args          | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-misc-uuid.args               | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-mlock-off.args               | 2 +-
+ tests/qemuxml2argvdata/qemuxml2argv-mlock-on.args                | 2 +-
+ tests/qemuxml2argvdata/qemuxml2argv-mlock-unsupported.args       | 2 +-
+ tests/qemuxml2argvdata/qemuxml2argv-monitor-json.args            | 3 ++-
+ .../qemuxml2argvdata/qemuxml2argv-multifunction-pci-device.args  | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-net-client.args              | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-net-eth-ifname.args          | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-net-eth-names.args           | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-net-eth.args                 | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-net-hostdev-vfio.args        | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-net-hostdev.args             | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-net-mcast.args               | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-net-server.args              | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-net-user.args                | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-net-virtio-ccw.args          | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-net-virtio-device.args       | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-net-virtio-netdev.args       | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-net-virtio-s390.args         | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-net-virtio.args              | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-no-shutdown.args             | 2 +-
+ tests/qemuxml2argvdata/qemuxml2argv-nographics-vga.args          | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-nographics.args              | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-nosharepages.args            | 3 ++-
+ .../qemuxml2argv-numad-auto-memory-vcpu-cpuset.args              | 3 ++-
+ ...uxml2argv-numad-auto-memory-vcpu-no-cpuset-and-placement.args | 3 ++-
+ .../qemuxml2argv-numad-auto-vcpu-static-numatune.args            | 3 ++-
+ .../qemuxml2argv-numad-static-memory-auto-vcpu.args              | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-numad.args                   | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-numatune-memory.args         | 3 ++-
+ .../qemuxml2argvdata/qemuxml2argv-parallel-parport-chardev.args  | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-parallel-tcp-chardev.args    | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-parallel-tcp.args            | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-pci-autoadd-addr.args        | 2 +-
+ tests/qemuxml2argvdata/qemuxml2argv-pci-autoadd-idx.args         | 2 +-
+ tests/qemuxml2argvdata/qemuxml2argv-pci-bridge-many-disks.args   | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-pci-rom.args                 | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-pcie-root.args               | 2 +-
+ tests/qemuxml2argvdata/qemuxml2argv-pcihole64-q35.args           | 2 +-
+ tests/qemuxml2argvdata/qemuxml2argv-pcihole64.args               | 2 +-
+ tests/qemuxml2argvdata/qemuxml2argv-ppc-dtb.args                 | 2 +-
+ tests/qemuxml2argvdata/qemuxml2argv-pseries-basic.args           | 2 +-
+ tests/qemuxml2argvdata/qemuxml2argv-pseries-nvram.args           | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-pseries-usb-default.args     | 2 +-
+ tests/qemuxml2argvdata/qemuxml2argv-pseries-usb-multi.args       | 2 +-
+ .../qemuxml2argvdata/qemuxml2argv-pseries-vio-user-assigned.args | 2 +-
+ tests/qemuxml2argvdata/qemuxml2argv-pseries-vio.args             | 2 +-
+ tests/qemuxml2argvdata/qemuxml2argv-q35.args                     | 2 +-
+ tests/qemuxml2argvdata/qemuxml2argv-qemu-ns-no-env.args          | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-qemu-ns.args                 | 4 ++--
+ tests/qemuxml2argvdata/qemuxml2argv-reboot-timeout-disabled.args | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-reboot-timeout-enabled.args  | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-restore-v1.args              | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-restore-v2-fd.args           | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-restore-v2.args              | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-s390-piix-controllers.args   | 2 +-
+ tests/qemuxml2argvdata/qemuxml2argv-s390-usb-none.args           | 2 +-
+ .../qemuxml2argv-seclabel-dynamic-baselabel.args                 | 3 ++-
+ .../qemuxml2argv-seclabel-dynamic-labelskip.args                 | 2 +-
+ .../qemuxml2argvdata/qemuxml2argv-seclabel-dynamic-override.args | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-seclabel-dynamic.args        | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-seclabel-none.args           | 3 ++-
+ .../qemuxml2argvdata/qemuxml2argv-seclabel-static-labelskip.args | 2 +-
+ tests/qemuxml2argvdata/qemuxml2argv-seclabel-static-relabel.args | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-seclabel-static.args         | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-serial-dev-chardev.args      | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-serial-dev.args              | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-serial-file-chardev.args     | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-serial-file.args             | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-serial-many-chardev.args     | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-serial-many.args             | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-serial-pty-chardev.args      | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-serial-pty.args              | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-serial-tcp-chardev.args      | 3 ++-
+ .../qemuxml2argvdata/qemuxml2argv-serial-tcp-telnet-chardev.args | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-serial-tcp-telnet.args       | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-serial-tcp.args              | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-serial-udp-chardev.args      | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-serial-udp.args              | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-serial-unix-chardev.args     | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-serial-unix.args             | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-serial-vc-chardev.args       | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-serial-vc.args               | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-smartcard-controller.args    | 3 ++-
+ .../qemuxml2argv-smartcard-host-certificates.args                | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-smartcard-host.args          | 3 ++-
+ .../qemuxml2argv-smartcard-passthrough-spicevmc.args             | 3 ++-
+ .../qemuxml2argvdata/qemuxml2argv-smartcard-passthrough-tcp.args | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-smbios.args                  | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-smp.args                     | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-sound-device.args            | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-sound.args                   | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-tpm-passthrough.args         | 2 +-
+ tests/qemuxml2argvdata/qemuxml2argv-usb-controller.args          | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-usb-hub.args                 | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-usb-ich9-companion.args      | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-usb-ich9-ehci-addr.args      | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-usb-none.args                | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-usb-piix3-controller.args    | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-usb-ports.args               | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-usb-redir-boot.args          | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-usb-redir-filter.args        | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-usb-redir.args               | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-usb1-usb2.args               | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-virtio-lun.args              | 2 +-
+ tests/qemuxml2argvdata/qemuxml2argv-virtio-rng-ccw.args          | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-virtio-rng-default.args      | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-virtio-rng-egd.args          | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-virtio-rng-random.args       | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-watchdog-device.args         | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-watchdog-dump.args           | 3 ++-
+ tests/qemuxml2argvdata/qemuxml2argv-watchdog.args                | 3 ++-
+ tests/qemuxmlnsdata/qemuxmlns-qemu-ns-commandline-ns0.args       | 2 +-
+ tests/qemuxmlnsdata/qemuxmlns-qemu-ns-commandline-ns1.args       | 2 +-
+ tests/qemuxmlnsdata/qemuxmlns-qemu-ns-commandline.args           | 2 +-
+ .../qemuxmlnsdata/qemuxmlns-qemu-ns-domain-commandline-ns0.args  | 2 +-
+ tests/qemuxmlnsdata/qemuxmlns-qemu-ns-domain-commandline.args    | 2 +-
+ tests/qemuxmlnsdata/qemuxmlns-qemu-ns-domain-ns0.args            | 2 +-
+ tests/qemuxmlnsdata/qemuxmlns-qemu-ns-domain.args                | 2 +-
+ 296 files changed, 543 insertions(+), 294 deletions(-)
+
+diff --git a/src/qemu/libvirtd_qemu.aug b/src/qemu/libvirtd_qemu.aug
+index 5344125..cd13d53 100644
+--- a/src/qemu/libvirtd_qemu.aug
++++ b/src/qemu/libvirtd_qemu.aug
+@@ -39,6 +39,8 @@ module Libvirtd_qemu =
+                  | str_entry  "spice_tls_x509_cert_dir"
+                  | str_entry "spice_password"
+ 
++   let nogfx_entry = bool_entry "nographics_allow_host_audio"
++
+    let remote_display_entry = int_entry "remote_display_port_min"
+                  | int_entry "remote_display_port_max"
+                  | int_entry "remote_websocket_port_min"
+@@ -79,6 +81,7 @@ module Libvirtd_qemu =
+    (* Each entry in the config is one of the following ... *)
+    let entry = vnc_entry
+              | spice_entry
++             | nogfx_entry
+              | remote_display_entry
+              | security_entry
+              | save_entry
+diff --git a/src/qemu/qemu.conf b/src/qemu/qemu.conf
+index cdf1ec4..5fd6263 100644
+--- a/src/qemu/qemu.conf
++++ b/src/qemu/qemu.conf
+@@ -140,6 +140,15 @@
+ #spice_password = "XYZ12345"
+ 
+ 
++# By default, if no graphical front end is configured, libvirt will disable
++# QEMU audio output since directly talking to alsa/pulseaudio may not work
++# with various security settings. If you know what you're doing, enable
++# the setting below and libvirt will passthrough the QEMU_AUDIO_DRV
++# environment variable when using nographics.
++#
++#nographics_allow_host_audio = 1
++
++
+ # Override the port for creating both VNC and SPICE sessions (min).
+ # This defaults to 5900 and increases for consecutive sessions
+ # or when ports are occupied, until it hits the maximum.
+diff --git a/src/qemu/qemu_cgroup.c b/src/qemu/qemu_cgroup.c
+index e27945e..cf41c33 100644
+--- a/src/qemu/qemu_cgroup.c
++++ b/src/qemu/qemu_cgroup.c
+@@ -488,7 +488,7 @@ qemuSetupDevicesCgroup(virQEMUDriverPtr driver,
+                 defaultDeviceACL;
+ 
+     if (vm->def->nsounds &&
+-        (!vm->def->ngraphics ||
++        ((!vm->def->ngraphics && cfg->nogfxAllowHostAudio) ||
+          ((vm->def->graphics[0]->type == VIR_DOMAIN_GRAPHICS_TYPE_VNC &&
+            cfg->vncAllowHostAudio) ||
+            (vm->def->graphics[0]->type == VIR_DOMAIN_GRAPHICS_TYPE_SDL)))) {
 diff --git a/src/qemu/qemu_command.c b/src/qemu/qemu_command.c
-index 4345456..d968333 100644
+index f8fccea..9dfdb73 100644
 --- a/src/qemu/qemu_command.c
 +++ b/src/qemu/qemu_command.c
-@@ -7160,9 +7160,13 @@ qemuBuildCommandLine(virConnectPtr conn,
+@@ -7605,9 +7605,15 @@ qemuBuildCommandLine(virConnectPtr conn,
       * if you ask for nographic. So we have to make sure we override
       * these defaults ourselves...
       */
@@ -308,14 +381,16 @@ index 4345456..d968333 100644
 +    if (!def->graphics) {
          virCommandAddArg(cmd, "-nographic");
  
-+        /* trying to talk directly to pulseaudio is generally problematic */
-+        virCommandAddEnvString(cmd, "QEMU_AUDIO_DRV=none");
++        if (cfg->nogfxAllowHostAudio)
++            virCommandAddEnvPass(cmd, "QEMU_AUDIO_DRV");
++        else
++            virCommandAddEnvString(cmd, "QEMU_AUDIO_DRV=none");
 +    }
 +
      if (virQEMUCapsGet(qemuCaps, QEMU_CAPS_DEVICE)) {
          /* Disable global config files and default devices */
          if (virQEMUCapsGet(qemuCaps, QEMU_CAPS_NO_USER_CONFIG))
-@@ -8226,6 +8230,7 @@ qemuBuildCommandLine(virConnectPtr conn,
+@@ -8723,6 +8729,7 @@ qemuBuildCommandLine(virConnectPtr conn,
                                           def->graphics[i]) < 0)
              goto error;
      }
@@ -323,6 +398,42 @@ index 4345456..d968333 100644
      if (def->nvideos > 0) {
          int primaryVideoType = def->videos[0]->type;
          if (virQEMUCapsGet(qemuCaps, QEMU_CAPS_DEVICE_VIDEO_PRIMARY) &&
+diff --git a/src/qemu/qemu_conf.c b/src/qemu/qemu_conf.c
+index 86ed9ed..1f57f72 100644
+--- a/src/qemu/qemu_conf.c
++++ b/src/qemu/qemu_conf.c
+@@ -338,6 +338,7 @@ int virQEMUDriverConfigLoadFile(virQEMUDriverConfigPtr cfg,
+     GET_VALUE_BOOL("vnc_sasl", cfg->vncSASL);
+     GET_VALUE_STR("vnc_sasl_dir", cfg->vncSASLdir);
+     GET_VALUE_BOOL("vnc_allow_host_audio", cfg->vncAllowHostAudio);
++    GET_VALUE_BOOL("nographics_allow_host_audio", cfg->nogfxAllowHostAudio);
+ 
+     p = virConfGetValue(conf, "security_driver");
+     if (p && p->type == VIR_CONF_LIST) {
+diff --git a/src/qemu/qemu_conf.h b/src/qemu/qemu_conf.h
+index 8229cfc..206f2c6 100644
+--- a/src/qemu/qemu_conf.h
++++ b/src/qemu/qemu_conf.h
+@@ -128,6 +128,7 @@ struct _virQEMUDriverConfig {
+ 
+     bool relaxedACS;
+     bool vncAllowHostAudio;
++    bool nogfxAllowHostAudio;
+     bool clearEmulatorCapabilities;
+     bool allowDiskFormatProbing;
+     bool setProcessName;
+diff --git a/src/qemu/test_libvirtd_qemu.aug.in b/src/qemu/test_libvirtd_qemu.aug.in
+index d4e4fae..ea770dc 100644
+--- a/src/qemu/test_libvirtd_qemu.aug.in
++++ b/src/qemu/test_libvirtd_qemu.aug.in
+@@ -15,6 +15,7 @@ module Test_libvirtd_qemu =
+ { "spice_tls" = "1" }
+ { "spice_tls_x509_cert_dir" = "/etc/pki/libvirt-spice" }
+ { "spice_password" = "XYZ12345" }
++{ "nographics_allow_host_audio" = "1" }
+ { "remote_display_port_min" = "5900" }
+ { "remote_display_port_max" = "65535" }
+ { "remote_websocket_port_min" = "5700" }
 diff --git a/tests/qemuxml2argvdata/qemuxml2argv-balloon-device-auto.args b/tests/qemuxml2argvdata/qemuxml2argv-balloon-device-auto.args
 index de4877b..bca7f6b 100644
 --- a/tests/qemuxml2argvdata/qemuxml2argv-balloon-device-auto.args
@@ -952,6 +1063,26 @@ index a002f89..31ffe59 100644
  pc -m 214 -smp 1 -nographic -monitor unix:/tmp/test-monitor,server,nowait \
  -no-acpi -boot c -usb -drive file=/dev/HostVG/QEMUGuest1,if=ide,bus=0,unit=0 -drive \
  if=ide,media=cdrom,bus=1,unit=0 -net none -serial none -parallel none
+diff --git a/tests/qemuxml2argvdata/qemuxml2argv-disk-cdrom-network-ftp.args b/tests/qemuxml2argvdata/qemuxml2argv-disk-cdrom-network-ftp.args
+index 4fae2b0..39cdf59 100644
+--- a/tests/qemuxml2argvdata/qemuxml2argv-disk-cdrom-network-ftp.args
++++ b/tests/qemuxml2argvdata/qemuxml2argv-disk-cdrom-network-ftp.args
+@@ -1,4 +1,4 @@
+-LC_ALL=C PATH=/bin HOME=/home/test USER=test LOGNAME=test /usr/bin/kvm -S \
++LC_ALL=C PATH=/bin HOME=/home/test USER=test LOGNAME=test QEMU_AUDIO_DRV=none /usr/bin/kvm -S \
+ -M pc-1.2 -m 1024 -smp 1 -nographic -nodefaults \
+ -monitor unix:/tmp/test-monitor,server,nowait -boot d -usb \
+ -drive file=ftp://host.name:21/url/path/file.iso,if=none,media=cdrom,id=drive-ide0-1-0 \
+diff --git a/tests/qemuxml2argvdata/qemuxml2argv-disk-cdrom-network-http.args b/tests/qemuxml2argvdata/qemuxml2argv-disk-cdrom-network-http.args
+index 97f5406..2b85ba9 100644
+--- a/tests/qemuxml2argvdata/qemuxml2argv-disk-cdrom-network-http.args
++++ b/tests/qemuxml2argvdata/qemuxml2argv-disk-cdrom-network-http.args
+@@ -1,4 +1,4 @@
+-LC_ALL=C PATH=/bin HOME=/home/test USER=test LOGNAME=test /usr/bin/kvm -S \
++LC_ALL=C PATH=/bin HOME=/home/test USER=test LOGNAME=test QEMU_AUDIO_DRV=none /usr/bin/kvm -S \
+ -M pc-1.2 -m 1024 -smp 1 -nographic -nodefaults \
+ -monitor unix:/tmp/test-monitor,server,nowait -boot d -usb \
+ -drive file=http://host.name:80/url/path/file.iso,if=none,media=cdrom,id=drive-ide0-1-0 \
 diff --git a/tests/qemuxml2argvdata/qemuxml2argv-disk-cdrom-tray-no-device-cap.args b/tests/qemuxml2argvdata/qemuxml2argv-disk-cdrom-tray-no-device-cap.args
 index 762741c..9d7683b 100644
 --- a/tests/qemuxml2argvdata/qemuxml2argv-disk-cdrom-tray-no-device-cap.args
@@ -1873,6 +2004,16 @@ index e6e42de..557b733 100644
  pc -m 214 -smp 1 -nographic -nodefconfig -nodefaults -monitor \
  unix:/tmp/test-monitor,server,nowait -no-acpi -boot c -usb -hda \
  /dev/HostVG/QEMUGuest2 -device vfio-pci,host=06:12.5,id=hostdev0,\
+diff --git a/tests/qemuxml2argvdata/qemuxml2argv-hotplug-base.args b/tests/qemuxml2argvdata/qemuxml2argv-hotplug-base.args
+index c4bd9c5..e78dff4 100644
+--- a/tests/qemuxml2argvdata/qemuxml2argv-hotplug-base.args
++++ b/tests/qemuxml2argvdata/qemuxml2argv-hotplug-base.args
+@@ -1,4 +1,4 @@
+-LC_ALL=C PATH=/bin HOME=/home/test USER=test LOGNAME=test \
++LC_ALL=C PATH=/bin HOME=/home/test USER=test LOGNAME=test QEMU_AUDIO_DRV=none \
+ /usr/libexec/qemu-kvm -S -M pc -m 4096 -smp 4 -nographic -nodefaults \
+ -monitor unix:/tmp/test-monitor,server,nowait \
+ -boot c \
 diff --git a/tests/qemuxml2argvdata/qemuxml2argv-hugepages.args b/tests/qemuxml2argvdata/qemuxml2argv-hugepages.args
 index b327147..d42d9fc 100644
 --- a/tests/qemuxml2argvdata/qemuxml2argv-hugepages.args
@@ -2549,6 +2690,36 @@ index cb360f6..c850613 100644
  pc -m 214 -smp 1 -nographic -nodefconfig -nodefaults -monitor \
  unix:/tmp/test-monitor,server,nowait -no-acpi -boot c -usb -hda \
  /dev/HostVG/QEMUGuest2 \
+diff --git a/tests/qemuxml2argvdata/qemuxml2argv-pcie-root.args b/tests/qemuxml2argvdata/qemuxml2argv-pcie-root.args
+index 84428f9..af5734d 100644
+--- a/tests/qemuxml2argvdata/qemuxml2argv-pcie-root.args
++++ b/tests/qemuxml2argvdata/qemuxml2argv-pcie-root.args
+@@ -1,4 +1,4 @@
+-LC_ALL=C PATH=/bin HOME=/home/test USER=test LOGNAME=test /usr/libexec/qemu-kvm \
++LC_ALL=C PATH=/bin HOME=/home/test USER=test LOGNAME=test QEMU_AUDIO_DRV=none /usr/libexec/qemu-kvm \
+ -S -M q35 -m 2048 -smp 2 -nographic -nodefaults \
+ -monitor unix:/tmp/test-monitor,server,nowait -no-acpi -boot c \
+ -device i82801b11-bridge,id=pci.1,bus=pcie.0,addr=0x2 \
+diff --git a/tests/qemuxml2argvdata/qemuxml2argv-pcihole64-q35.args b/tests/qemuxml2argvdata/qemuxml2argv-pcihole64-q35.args
+index 6d33b65..e10ccb1 100644
+--- a/tests/qemuxml2argvdata/qemuxml2argv-pcihole64-q35.args
++++ b/tests/qemuxml2argvdata/qemuxml2argv-pcihole64-q35.args
+@@ -1,4 +1,4 @@
+-LC_ALL=C PATH=/bin HOME=/home/test USER=test LOGNAME=test \
++LC_ALL=C PATH=/bin HOME=/home/test USER=test LOGNAME=test QEMU_AUDIO_DRV=none \
+ /usr/libexec/qemu-kvm -S -M q35 -m 2048 -smp 2 -nographic -nodefaults \
+ -monitor unix:/tmp/test-monitor,server,nowait -no-acpi \
+ -boot c -global q35-pcihost.pci-hole64-size=1048576K \
+diff --git a/tests/qemuxml2argvdata/qemuxml2argv-pcihole64.args b/tests/qemuxml2argvdata/qemuxml2argv-pcihole64.args
+index 3165139..35fbf8f 100644
+--- a/tests/qemuxml2argvdata/qemuxml2argv-pcihole64.args
++++ b/tests/qemuxml2argvdata/qemuxml2argv-pcihole64.args
+@@ -1,4 +1,4 @@
+-LC_ALL=C PATH=/bin HOME=/home/test USER=test LOGNAME=test \
++LC_ALL=C PATH=/bin HOME=/home/test USER=test LOGNAME=test QEMU_AUDIO_DRV=none \
+ /usr/libexec/qemu-kvm -S -M pc-1.2 -m 2048 -smp 2 -nographic -nodefaults \
+ -monitor unix:/tmp/test-monitor,server,nowait -no-acpi \
+ -boot c -global i440FX-pcihost.pci-hole64-size=1048576K -usb \
 diff --git a/tests/qemuxml2argvdata/qemuxml2argv-ppc-dtb.args b/tests/qemuxml2argvdata/qemuxml2argv-ppc-dtb.args
 index 93e8f9c..fd7e994 100644
 --- a/tests/qemuxml2argvdata/qemuxml2argv-ppc-dtb.args
@@ -2620,6 +2791,16 @@ index 60b31c1..f7c3af0 100644
  /usr/bin/qemu-system-ppc64 \
  -S -M pseries -m 512 -smp 1 -nographic -nodefconfig -nodefaults \
  -chardev socket,id=charmonitor,path=/tmp/test-monitor,server,nowait \
+diff --git a/tests/qemuxml2argvdata/qemuxml2argv-q35.args b/tests/qemuxml2argvdata/qemuxml2argv-q35.args
+index 9e67be5..4461eba 100644
+--- a/tests/qemuxml2argvdata/qemuxml2argv-q35.args
++++ b/tests/qemuxml2argvdata/qemuxml2argv-q35.args
+@@ -1,4 +1,4 @@
+-LC_ALL=C PATH=/bin HOME=/home/test USER=test LOGNAME=test \
++LC_ALL=C PATH=/bin HOME=/home/test USER=test LOGNAME=test QEMU_AUDIO_DRV=none \
+ /usr/libexec/qemu-kvm -S -M q35 -m 2048 -smp 2 -nographic -nodefaults \
+ -monitor unix:/tmp/test-monitor,server,nowait -no-acpi -boot c \
+ -device i82801b11-bridge,id=pci.1,bus=pcie.0,addr=0x2 \
 diff --git a/tests/qemuxml2argvdata/qemuxml2argv-qemu-ns-no-env.args b/tests/qemuxml2argvdata/qemuxml2argv-qemu-ns-no-env.args
 index e69a3b6..7606c1a 100644
 --- a/tests/qemuxml2argvdata/qemuxml2argv-qemu-ns-no-env.args
@@ -2727,6 +2908,16 @@ index f0146c7..8bef546 100644
  -name QEMUGuest1 -S -M pc -m 214 -smp 1 -nographic -monitor \
  unix:/tmp/test-monitor,server,nowait -no-acpi -boot c -usb \
  -hda /dev/HostVG/QEMUGuest1 -net none -serial \
+diff --git a/tests/qemuxml2argvdata/qemuxml2argv-seclabel-dynamic-labelskip.args b/tests/qemuxml2argvdata/qemuxml2argv-seclabel-dynamic-labelskip.args
+index 892c6b5..74357f8 100644
+--- a/tests/qemuxml2argvdata/qemuxml2argv-seclabel-dynamic-labelskip.args
++++ b/tests/qemuxml2argvdata/qemuxml2argv-seclabel-dynamic-labelskip.args
+@@ -1,4 +1,4 @@
+-LC_ALL=C PATH=/bin HOME=/home/test USER=test LOGNAME=test /usr/bin/qemu \
++LC_ALL=C PATH=/bin HOME=/home/test USER=test LOGNAME=test QEMU_AUDIO_DRV=none /usr/bin/qemu \
+ -name QEMUGuest1 -S -M pc -m 214 -smp 1 -nographic -monitor \
+ unix:/tmp/test-monitor,server,nowait -no-acpi -boot c -usb \
+ -hda /dev/HostVG/QEMUGuest1 \
 diff --git a/tests/qemuxml2argvdata/qemuxml2argv-seclabel-dynamic-override.args b/tests/qemuxml2argvdata/qemuxml2argv-seclabel-dynamic-override.args
 index 35c3e81..397df23 100644
 --- a/tests/qemuxml2argvdata/qemuxml2argv-seclabel-dynamic-override.args
@@ -2760,6 +2951,16 @@ index f0146c7..8bef546 100644
  -name QEMUGuest1 -S -M pc -m 214 -smp 1 -nographic -monitor \
  unix:/tmp/test-monitor,server,nowait -no-acpi -boot c -usb \
  -hda /dev/HostVG/QEMUGuest1 -net none -serial \
+diff --git a/tests/qemuxml2argvdata/qemuxml2argv-seclabel-static-labelskip.args b/tests/qemuxml2argvdata/qemuxml2argv-seclabel-static-labelskip.args
+index 892c6b5..74357f8 100644
+--- a/tests/qemuxml2argvdata/qemuxml2argv-seclabel-static-labelskip.args
++++ b/tests/qemuxml2argvdata/qemuxml2argv-seclabel-static-labelskip.args
+@@ -1,4 +1,4 @@
+-LC_ALL=C PATH=/bin HOME=/home/test USER=test LOGNAME=test /usr/bin/qemu \
++LC_ALL=C PATH=/bin HOME=/home/test USER=test LOGNAME=test QEMU_AUDIO_DRV=none /usr/bin/qemu \
+ -name QEMUGuest1 -S -M pc -m 214 -smp 1 -nographic -monitor \
+ unix:/tmp/test-monitor,server,nowait -no-acpi -boot c -usb \
+ -hda /dev/HostVG/QEMUGuest1 \
 diff --git a/tests/qemuxml2argvdata/qemuxml2argv-seclabel-static-relabel.args b/tests/qemuxml2argvdata/qemuxml2argv-seclabel-static-relabel.args
 index f4a5c6d..dc5bc2b 100644
 --- a/tests/qemuxml2argvdata/qemuxml2argv-seclabel-static-relabel.args
@@ -3367,3 +3568,6 @@ index 29cf9c3..26038a0 100644
  /usr/bin/qemu -S -M pc -m 214 -smp 1 -nographic -monitor \
  unix:/tmp/test-monitor,server,nowait -no-acpi -boot c -usb -hda \
  /dev/HostVG/QEMUGuest1 -net none -serial none -parallel none
+-- 
+1.8.3.1
+
