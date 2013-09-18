@@ -366,7 +366,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 1.1.2
-Release: 1%{?dist}%{?extra_release}
+Release: 2%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -2125,6 +2125,9 @@ fi
 %endif
 
 %changelog
+* Wed Sep 18 2013 Daniel P. Berrange <berrange@redhat.com> - 1.1.2-2
+- Rebuild for soname break in openswman package
+
 * Mon Sep  2 2013 Daniel P. Berrange <berrange@redhat.com> - 1.1.2-1
 - Update to 1.1.2 release
 
