@@ -1,7 +1,7 @@
-From 20f2f4c07d8e8d4373094473114ae16909fe4005 Mon Sep 17 00:00:00 2001
+From c72361536b151a2b9bd839bd528671bafbd5dee2 Mon Sep 17 00:00:00 2001
 From: Cole Robinson <crobinso@redhat.com>
 Date: Fri, 30 Aug 2013 12:41:32 -0400
-Subject: [PATCH 4/8] qemu: Fix specifying char devs for ARM
+Subject: [PATCH] qemu: Fix specifying char devs for ARM
 
 QEMU ARM boards don't give us any way to explicitly wire in
 a -chardev, so use the old style -serial options.
@@ -154,6 +154,3 @@ index dfe8142..abe0060 100644
          if ((logfd = qemuDomainOpenLog(driver, vm, pos)) < 0)
              return -1;
  
--- 
-1.8.3.1
-

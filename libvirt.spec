@@ -13,6 +13,9 @@
 # touch configure.ac or Makefile.am.
 %{!?enable_autotools:%define enable_autotools 0}
 
+# Drop after libvirt-1.1.3 is rebased
+%define enable_autotools 1
+
 # A client only build will create a libvirt.so only containing
 # the generic RPC driver, and test driver and no libvirtd
 # Default to a full server + client build
@@ -366,7 +369,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 1.1.2
-Release: 2%{?dist}%{?extra_release}
+Release: 3%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -386,6 +389,20 @@ Patch0005: 0005-qemu-Don-t-try-to-allocate-PCI-addresses-for-ARM.patch
 Patch0006: 0006-domain_conf-Add-disk-bus-sd-wire-it-up-for-qemu.patch
 Patch0007: 0007-qemu-Fix-networking-for-ARM-guests.patch
 Patch0008: 0008-qemu-Support-virtio-mmio-transport-for-virtio-on-ARM.patch
+
+# Sync with v1.1.2-maint
+Patch0101: 0101-virFileNBDDeviceAssociate-Avoid-use-of-uninitialized.patch
+Patch0102: 0102-Fix-AM_LDFLAGS-typo.patch
+Patch0103: 0103-Pass-AM_LDFLAGS-to-driver-modules-too.patch
+Patch0104: 0104-build-fix-build-with-latest-rawhide-kernel-headers.patch
+Patch0105: 0105-Also-store-user-group-ID-values-in-virIdentity.patch
+Patch0106: 0106-Ensure-system-identity-includes-process-start-time.patch
+Patch0107: 0107-Add-support-for-using-3-arg-pkcheck-syntax-for-proce.patch
+Patch0108: 0108-Fix-crash-in-remoteDispatchDomainMemoryStats-CVE-201.patch
+Patch0109: 0109-virsh-add-missing-async-option-in-opts_block_commit.patch
+Patch0110: 0110-Fix-typo-in-identity-code-which-is-pre-requisite-for.patch
+Patch0111: 0111-Add-a-virNetSocketNewConnectSockFD-method.patch
+Patch0112: 0112-Add-test-case-for-virNetServerClient-object-identity.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -607,6 +624,7 @@ BuildRequires: audit-libs-devel
 # we need /usr/sbin/dtrace
 BuildRequires: systemtap-sdt-devel
 %endif
+
 
 %if %{with_storage_fs}
 # For mount/umount in FS driver
@@ -1171,6 +1189,20 @@ of recent versions of Linux (and other OSes).
 %patch0006 -p1
 %patch0007 -p1
 %patch0008 -p1
+
+# Sync with v1.1.2-maint
+%patch0101 -p1
+%patch0102 -p1
+%patch0103 -p1
+%patch0104 -p1
+%patch0105 -p1
+%patch0106 -p1
+%patch0107 -p1
+%patch0108 -p1
+%patch0109 -p1
+%patch0110 -p1
+%patch0111 -p1
+%patch0112 -p1
 
 %build
 %if ! %{with_xen}
@@ -2125,6 +2157,14 @@ fi
 %endif
 
 %changelog
+* Mon Sep 23 2013 Cole Robinson <crobinso@redhat.com> - 1.1.2-3
+- Sync with v1.1.2-maint
+- Rebuild for libswan soname bump (bz #1009701)
+- CVE-2013-4311: Insecure polkit usage (bz #1009539, bz #1005332)
+- CVE-2013-4296: Invalid free memory stats (bz #1006173, bz #1009667)
+- CVE-2013-4297: Invalid free in NBDDeviceAssociate (bz #1006505, bz #1006511)
+- Fix virsh block-commit abort (bz #1010056)
+
 * Wed Sep 18 2013 Daniel P. Berrange <berrange@redhat.com> - 1.1.2-2
 - Rebuild for soname break in openswman package
 

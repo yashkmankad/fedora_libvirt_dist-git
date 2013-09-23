@@ -1,7 +1,7 @@
-From 019eccdb20e824aabb12da3699664ba2625ef4b4 Mon Sep 17 00:00:00 2001
+From e534a73a71655d45a0b0af98b4b9b9176d701fb3 Mon Sep 17 00:00:00 2001
 From: Cole Robinson <crobinso@redhat.com>
 Date: Fri, 30 Aug 2013 12:41:34 -0400
-Subject: [PATCH 6/8] domain_conf: Add disk bus=sd, wire it up for qemu
+Subject: [PATCH] domain_conf: Add disk bus=sd, wire it up for qemu
 
 This corresponds to '-sd' and '-drive if=sd' on the qemu command line.
 Needed for many ARM boards which don't provide any other way to
@@ -144,6 +144,3 @@ index 87345c7..6733709 100644
          ignore_value(VIR_STRDUP(def->dst, "sda"));
      } else if (def->bus == VIR_DOMAIN_DISK_BUS_VIRTIO) {
          ignore_value(VIR_STRDUP(def->dst, "vda"));
--- 
-1.8.3.1
-

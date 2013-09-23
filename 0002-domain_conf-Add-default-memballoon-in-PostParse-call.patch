@@ -1,8 +1,7 @@
-From 79c38961565eb2d352f101cbd6806314894614cb Mon Sep 17 00:00:00 2001
+From 1bab38008dbfb16329e73b419fd9871e6f15990c Mon Sep 17 00:00:00 2001
 From: Cole Robinson <crobinso@redhat.com>
 Date: Fri, 30 Aug 2013 12:41:30 -0400
-Subject: [PATCH 2/8] domain_conf: Add default memballoon in PostParse
- callbacks
+Subject: [PATCH] domain_conf: Add default memballoon in PostParse callbacks
 
 This should be a no-op change for now.
 ---
@@ -76,6 +75,3 @@ index cb64de6..6cb4f4f 100644
      return 0;
  }
  
--- 
-1.8.3.1
-

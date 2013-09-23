@@ -1,7 +1,7 @@
-From 1ec41110747764f89f522e9e010326944da8d96d Mon Sep 17 00:00:00 2001
+From cddd76962c2a0fcbb8c80240d234b7d0d657324d Mon Sep 17 00:00:00 2001
 From: Cole Robinson <crobinso@redhat.com>
 Date: Fri, 30 Aug 2013 12:41:36 -0400
-Subject: [PATCH 8/8] qemu: Support virtio-mmio transport for virtio on ARM
+Subject: [PATCH] qemu: Support virtio-mmio transport for virtio on ARM
 
 Starting with qemu 1.6, the qemu-system-arm vexpress-a9 model has a
 hardcoded virtio-mmio transport which enables attaching all virtio
@@ -446,6 +446,3 @@ index 6ecabbf..ae8cc3b 100644
  
      virObjectUnref(driver.config);
      virObjectUnref(driver.caps);
--- 
-1.8.3.1
-

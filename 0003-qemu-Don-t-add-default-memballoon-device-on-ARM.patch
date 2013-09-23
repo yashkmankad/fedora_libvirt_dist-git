@@ -1,7 +1,7 @@
-From 5ed47b89c6cb59c9ec5169bcc99a67e9a75fb2af Mon Sep 17 00:00:00 2001
+From d85bc1315cc00800ed6d4a1baeda9a91c34e52c4 Mon Sep 17 00:00:00 2001
 From: Cole Robinson <crobinso@redhat.com>
 Date: Fri, 30 Aug 2013 12:41:31 -0400
-Subject: [PATCH 3/8] qemu: Don't add default memballoon device on ARM
+Subject: [PATCH] qemu: Don't add default memballoon device on ARM
 
 And add test cases for a basic working ARM guest.
 ---
@@ -189,6 +189,3 @@ index fac83b2..92433ef 100644
      if (virTestGetDebug()) {
          char *caps_str;
  
--- 
-1.8.3.1
-

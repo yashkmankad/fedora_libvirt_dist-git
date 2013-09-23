@@ -1,7 +1,7 @@
-From 5772cbdfb807842685d05665f285745ca79acc89 Mon Sep 17 00:00:00 2001
+From c8e47add2fe77905523f6112ceb6b844337f6d3f Mon Sep 17 00:00:00 2001
 From: Cole Robinson <crobinso@redhat.com>
 Date: Fri, 30 Aug 2013 12:41:33 -0400
-Subject: [PATCH 5/8] qemu: Don't try to allocate PCI addresses for ARM
+Subject: [PATCH] qemu: Don't try to allocate PCI addresses for ARM
 
 ---
  src/qemu/qemu_command.c | 16 ++++++++++++++--
@@ -41,6 +41,3 @@ index a8e532c..87345c7 100644
      }
  
      if (obj && obj->privateData) {
--- 
-1.8.3.1
-

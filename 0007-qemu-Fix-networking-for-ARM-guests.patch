@@ -1,7 +1,7 @@
-From 7a73b81f1021c76d02fe54f927cd033fe949590f Mon Sep 17 00:00:00 2001
+From b09ab6961b8dd60691839f0b1a5f259925819425 Mon Sep 17 00:00:00 2001
 From: Cole Robinson <crobinso@redhat.com>
 Date: Fri, 30 Aug 2013 12:41:35 -0400
-Subject: [PATCH 7/8] qemu: Fix networking for ARM guests
+Subject: [PATCH] qemu: Fix networking for ARM guests
 
 Similar to the chardev bit, ARM boards depend on the old style '-net nic'
 for actually instantiating net devices. But we can't block out
@@ -204,6 +204,3 @@ index cb6106f..6ecabbf 100644
  
      virObjectUnref(driver.config);
      virObjectUnref(driver.caps);
--- 
-1.8.3.1
-
