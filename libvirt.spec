@@ -369,7 +369,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 1.1.2
-Release: 3%{?dist}%{?extra_release}
+Release: 4%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -403,6 +403,10 @@ Patch0109: 0109-virsh-add-missing-async-option-in-opts_block_commit.patch
 Patch0110: 0110-Fix-typo-in-identity-code-which-is-pre-requisite-for.patch
 Patch0111: 0111-Add-a-virNetSocketNewConnectSockFD-method.patch
 Patch0112: 0112-Add-test-case-for-virNetServerClient-object-identity.patch
+
+# Fix snapshot restore when VM has disabled usb support (bz #1011520)
+Patch0201: 0201-qemu-Fix-checking-of-ABI-stability-when-restoring-ex.patch
+Patch0202: 0202-qemu-Use-migratable-XML-definition-when-doing-extern.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -1203,6 +1207,10 @@ of recent versions of Linux (and other OSes).
 %patch0110 -p1
 %patch0111 -p1
 %patch0112 -p1
+
+# Fix snapshot restore when VM has disabled usb support (bz #1011520)
+%patch0201 -p1
+%patch0202 -p1
 
 %build
 %if ! %{with_xen}
@@ -2157,6 +2165,9 @@ fi
 %endif
 
 %changelog
+* Tue Sep 24 2013 Cole Robinson <crobinso@redhat.com> - 1.1.2-4
+- Fix snapshot restore when VM has disabled usb support (bz #1011520)
+
 * Mon Sep 23 2013 Cole Robinson <crobinso@redhat.com> - 1.1.2-3
 - Sync with v1.1.2-maint
 - Rebuild for libswan soname bump (bz #1009701)
