@@ -13,13 +13,11 @@
 # touch configure.ac or Makefile.am.
 %{!?enable_autotools:%define enable_autotools 0}
 
-# Drop after libvirt-1.1.3 is rebased
-%define enable_autotools 1
-
 # A client only build will create a libvirt.so only containing
 # the generic RPC driver, and test driver and no libvirtd
-# Default to a full server + client build
-%define client_only        0
+# Default to a full server + client build, but with the possibility
+# of a command-line or ~/.rpmmacros override for client-only.
+%{!?client_only:%define client_only 0}
 
 # Now turn off server build in certain cases
 
@@ -53,6 +51,7 @@
 %define with_lxc           0%{!?_without_lxc:%{server_drivers}}
 %define with_uml           0%{!?_without_uml:%{server_drivers}}
 %define with_libxl         0%{!?_without_libxl:%{server_drivers}}
+%define with_vbox          0%{!?_without_vbox:%{server_drivers}}
 
 %define with_qemu_tcg      %{with_qemu}
 # Change if we ever provide qemu-kvm binaries on non-x86 hosts
@@ -74,7 +73,6 @@
 
 # Then the hypervisor drivers that run outside libvirtd, in libvirt.so
 %define with_openvz        0%{!?_without_openvz:1}
-%define with_vbox          0%{!?_without_vbox:1}
 %define with_vmware        0%{!?_without_vmware:1}
 %define with_phyp          0%{!?_without_phyp:1}
 %define with_esx           0%{!?_without_esx:1}
@@ -368,8 +366,8 @@
 
 Summary: Library providing a simple virtualization API
 Name: libvirt
-Version: 1.1.2
-Release: 4%{?dist}%{?extra_release}
+Version: 1.1.3
+Release: 1%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -379,34 +377,6 @@ URL: http://libvirt.org/
     %define mainturl stable_updates/
 %endif
 Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
-
-# Fix launching ARM guests on x86 (patches posted upstream, F20 feature)
-Patch0001: 0001-qemu-Set-QEMU_AUDIO_DRV-none-with-nographic.patch
-Patch0002: 0002-domain_conf-Add-default-memballoon-in-PostParse-call.patch
-Patch0003: 0003-qemu-Don-t-add-default-memballoon-device-on-ARM.patch
-Patch0004: 0004-qemu-Fix-specifying-char-devs-for-ARM.patch
-Patch0005: 0005-qemu-Don-t-try-to-allocate-PCI-addresses-for-ARM.patch
-Patch0006: 0006-domain_conf-Add-disk-bus-sd-wire-it-up-for-qemu.patch
-Patch0007: 0007-qemu-Fix-networking-for-ARM-guests.patch
-Patch0008: 0008-qemu-Support-virtio-mmio-transport-for-virtio-on-ARM.patch
-
-# Sync with v1.1.2-maint
-Patch0101: 0101-virFileNBDDeviceAssociate-Avoid-use-of-uninitialized.patch
-Patch0102: 0102-Fix-AM_LDFLAGS-typo.patch
-Patch0103: 0103-Pass-AM_LDFLAGS-to-driver-modules-too.patch
-Patch0104: 0104-build-fix-build-with-latest-rawhide-kernel-headers.patch
-Patch0105: 0105-Also-store-user-group-ID-values-in-virIdentity.patch
-Patch0106: 0106-Ensure-system-identity-includes-process-start-time.patch
-Patch0107: 0107-Add-support-for-using-3-arg-pkcheck-syntax-for-proce.patch
-Patch0108: 0108-Fix-crash-in-remoteDispatchDomainMemoryStats-CVE-201.patch
-Patch0109: 0109-virsh-add-missing-async-option-in-opts_block_commit.patch
-Patch0110: 0110-Fix-typo-in-identity-code-which-is-pre-requisite-for.patch
-Patch0111: 0111-Add-a-virNetSocketNewConnectSockFD-method.patch
-Patch0112: 0112-Add-test-case-for-virNetServerClient-object-identity.patch
-
-# Fix snapshot restore when VM has disabled usb support (bz #1011520)
-Patch0201: 0201-qemu-Fix-checking-of-ABI-stability-when-restoring-ex.patch
-Patch0202: 0202-qemu-Use-migratable-XML-definition-when-doing-extern.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -539,8 +509,7 @@ BuildRequires: cyrus-sasl-devel
 %endif
 %if %{with_polkit}
     %if 0%{?fedora} >= 12 || 0%{?rhel} >= 6
-# Only need the binary, not -devel
-BuildRequires: polkit >= 0.93
+BuildRequires: polkit-devel >= 0.93
     %else
 BuildRequires: PolicyKit-devel >= 0.6
     %endif
@@ -628,7 +597,6 @@ BuildRequires: audit-libs-devel
 # we need /usr/sbin/dtrace
 BuildRequires: systemtap-sdt-devel
 %endif
-
 
 %if %{with_storage_fs}
 # For mount/umount in FS driver
@@ -1183,34 +1151,6 @@ of recent versions of Linux (and other OSes).
 
 %prep
 %setup -q
-
-# Fix launching ARM guests on x86 (patches posted upstream, F20 feature)
-%patch0001 -p1
-%patch0002 -p1
-%patch0003 -p1
-%patch0004 -p1
-%patch0005 -p1
-%patch0006 -p1
-%patch0007 -p1
-%patch0008 -p1
-
-# Sync with v1.1.2-maint
-%patch0101 -p1
-%patch0102 -p1
-%patch0103 -p1
-%patch0104 -p1
-%patch0105 -p1
-%patch0106 -p1
-%patch0107 -p1
-%patch0108 -p1
-%patch0109 -p1
-%patch0110 -p1
-%patch0111 -p1
-%patch0112 -p1
-
-# Fix snapshot restore when VM has disabled usb support (bz #1011520)
-%patch0201 -p1
-%patch0202 -p1
 
 %build
 %if ! %{with_xen}
@@ -1783,6 +1723,8 @@ fi
 
 %files docs
 %defattr(-, root, root)
+%doc AUTHORS ChangeLog.gz NEWS README TODO
+
 # Website
 %dir %{_datadir}/doc/libvirt-docs-%{version}
 %dir %{_datadir}/doc/libvirt-docs-%{version}/html
@@ -1799,7 +1741,6 @@ fi
 %files daemon
 %defattr(-, root, root)
 
-%doc AUTHORS ChangeLog.gz NEWS README COPYING COPYING.LESSER TODO
 %dir %attr(0700, root, root) %{_sysconfdir}/libvirt/
 
     %if %{with_network}
@@ -2071,20 +2012,26 @@ fi
 
 %files client -f %{name}.lang
 %defattr(-, root, root)
-%doc AUTHORS ChangeLog.gz NEWS README COPYING COPYING.LESSER TODO
+%doc COPYING COPYING.LESSER
 
 %config(noreplace) %{_sysconfdir}/libvirt/libvirt.conf
+%if %{with_lxc}
 %config(noreplace) %{_sysconfdir}/libvirt/virt-login-shell.conf
+%endif
 %{_mandir}/man1/virsh.1*
 %{_mandir}/man1/virt-xml-validate.1*
 %{_mandir}/man1/virt-pki-validate.1*
 %{_mandir}/man1/virt-host-validate.1*
+%if %{with_lxc}
 %{_mandir}/man1/virt-login-shell.1*
+%endif
 %{_bindir}/virsh
 %{_bindir}/virt-xml-validate
 %{_bindir}/virt-pki-validate
 %{_bindir}/virt-host-validate
+%if %{with_lxc}
 %attr(4755, root, root) %{_bindir}/virt-login-shell
+%endif
 %{_libdir}/lib*.so.*
 
 %if %{with_dtrace}
@@ -2155,7 +2102,6 @@ fi
 %files python
 %defattr(-, root, root)
 
-%doc AUTHORS NEWS README COPYING COPYING.LESSER
 %{_libdir}/python*/site-packages/libvirt.py*
 %{_libdir}/python*/site-packages/libvirt_qemu.py*
 %{_libdir}/python*/site-packages/libvirt_lxc.py*
@@ -2165,6 +2111,14 @@ fi
 %endif
 
 %changelog
+* Tue Oct  1 2013 Daniel Veillard <veillard@redhat.com> - 1.1.3-1
+- VMware: Initial VMware Fusion support and various improvements
+- libvirt: add new public API virConnectGetCPUModelNames
+- various libxl driver improvements
+- LXC many container driver improvement
+- ARM cpu improvements
+- a lot of bug and leak fixes and various improvements
+
 * Tue Sep 24 2013 Cole Robinson <crobinso@redhat.com> - 1.1.2-4
 - Fix snapshot restore when VM has disabled usb support (bz #1011520)
 
