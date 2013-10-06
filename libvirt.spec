@@ -367,7 +367,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 1.1.3
-Release: 1%{?dist}%{?extra_release}
+Release: 2%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -377,6 +377,16 @@ URL: http://libvirt.org/
     %define mainturl stable_updates/
 %endif
 Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
+
+# Allow QoS change with update-device (bz #1014200)
+Patch0001: 0001-qemu_hotplug-Allow-QoS-update-in-qemuDomainChangeNet.patch
+Patch0002: 0002-virNetDevBandwidthEqual-Make-it-more-robust.patch
+# Fix nwfilter crash during firewalld install (bz #1014762)
+Patch0003: 0003-Remove-virConnectPtr-arg-from-virNWFilterDefParse.patch
+Patch0004: 0004-Don-t-pass-virConnectPtr-in-nwfilter-struct-domUpdat.patch
+Patch0005: 0005-Remove-use-of-virConnectPtr-from-all-remaining-nwfil.patch
+# Fix crash with nographics (bz #1014088)
+Patch0006: 0006-qemu-cgroup-Fix-crash-if-starting-nographics-guest.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -1151,6 +1161,16 @@ of recent versions of Linux (and other OSes).
 
 %prep
 %setup -q
+
+# Allow QoS change with update-device (bz #1014200)
+%patch0001 -p1
+%patch0002 -p1
+# Fix nwfilter crash during firewalld install (bz #1014762)
+%patch0003 -p1
+%patch0004 -p1
+%patch0005 -p1
+# Fix crash with nographics (bz #1014088)
+%patch0006 -p1
 
 %build
 %if ! %{with_xen}
@@ -2111,6 +2131,11 @@ fi
 %endif
 
 %changelog
+* Sun Oct 06 2013 Cole Robinson <crobinso@redhat.com> - 1.1.3-2
+- Allow QoS change with update-device (bz #1014200)
+- Fix nwfilter crash during firewalld install (bz #1014762)
+- Fix crash with nographics (bz #1014088)
+
 * Tue Oct  1 2013 Daniel Veillard <veillard@redhat.com> - 1.1.3-1
 - VMware: Initial VMware Fusion support and various improvements
 - libvirt: add new public API virConnectGetCPUModelNames
