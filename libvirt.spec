@@ -367,7 +367,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 1.1.4
-Release: 1%{?dist}%{?extra_release}
+Release: 2%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -377,6 +377,9 @@ URL: http://libvirt.org/
     %define mainturl stable_updates/
 %endif
 Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
+
+# virsh nodedev-detach fails if device has no driver (bz #1028629)
+Patch0001: 0001-virpci-Don-t-error-on-unbinded-devices.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -1160,6 +1163,9 @@ of recent versions of Linux (and other OSes).
 
 %prep
 %setup -q
+
+# virsh nodedev-detach fails if device has no driver (bz #1028629)
+%patch0001 -p1
 
 %build
 %if ! %{with_xen}
@@ -2118,6 +2124,9 @@ fi
 %endif
 
 %changelog
+* Tue Nov 12 2013 Cole Robinson <crobinso@redhat.com> - 1.1.4-2
+- virsh nodedev-detach fails if device has no driver (bz #1028629)
+
 * Mon Nov  4 2013 Daniel Veillard <veillard@redhat.com> - 1.1.4-1
 - upstream release of 1.1.4
 - Add support for AArch64 architecture

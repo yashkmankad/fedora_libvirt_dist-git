@@ -1,0 +1,39 @@
+From df4283a55bf3516b333352e2052dbe3317936953 Mon Sep 17 00:00:00 2001
+Message-Id: <df4283a55bf3516b333352e2052dbe3317936953.1384267031.git.crobinso@redhat.com>
+From: Michal Privoznik <mprivozn@redhat.com>
+Date: Thu, 31 Oct 2013 10:32:58 +0000
+Subject: [PATCH] virpci: Don't error on unbinded devices
+
+https://bugzilla.redhat.com/show_bug.cgi?id=1018897
+
+If a PCI deivce is not binded to any driver (e.g. there's yet no PCI
+driver in the linux kernel) but still users want to passthru the device
+we fail the whole operation as we fail to resolve the 'driver' link
+under the PCI device sysfs tree. Obviously, this is not a fatal error
+and it shouldn't be error at all.
+
+Signed-off-by: Michal Privoznik <mprivozn@redhat.com>
+---
+ src/util/virpci.c | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
+
+diff --git a/src/util/virpci.c b/src/util/virpci.c
+index 65d7168..148631f 100644
+--- a/src/util/virpci.c
++++ b/src/util/virpci.c
+@@ -1095,11 +1095,8 @@ virPCIDeviceBindToStub(virPCIDevicePtr dev,
+     const char *newDriverName = NULL;
+ 
+     if (virPCIDriverDir(&stubDriverPath, stubDriverName) < 0 ||
+-        virPCIFile(&driverLink, dev->name, "driver") < 0 ||
+-        virPCIDeviceGetDriverPathAndName(dev, &oldDriverPath,
+-                                         &oldDriverName) < 0) {
++        virPCIFile(&driverLink, dev->name, "driver") < 0)
+         goto cleanup;
+-    }
+ 
+     if (virFileExists(driverLink)) {
+         if (virFileLinkPointsTo(driverLink, stubDriverPath)) {
+-- 
+1.8.4.2
+
