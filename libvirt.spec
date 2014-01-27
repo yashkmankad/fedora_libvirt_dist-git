@@ -372,7 +372,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 1.2.1
-Release: 1%{?dist}%{?extra_release}
+Release: 2%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -2148,6 +2148,9 @@ exit 0
 %doc examples/systemtap
 
 %changelog
+* Mon Jan 27 2014 Cole Robinson <crobinso@redhat.com> - 1.2.1-2
+- Rebuild for openwsman soname bump
+
 * Tue Jan 21 2014 Daniel P. Berrange <berrange@redhat.com> - 1.2.1-1
 - Update to 1.2.1 release
 
