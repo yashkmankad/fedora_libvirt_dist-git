@@ -388,7 +388,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 1.2.3
-Release: 1%{?dist}%{?extra_release}
+Release: 2%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -398,6 +398,9 @@ URL: http://libvirt.org/
     %define mainturl stable_updates/
 %endif
 Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
+
+# Fix LXC from throwing error System lacks NETNS support (bz #1084902)
+Patch0001: 0001-LXC-Fix-return-code-evaulation-in-lxcCheckNetNsSuppo.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -1205,6 +1208,9 @@ driver
 
 %prep
 %setup -q
+
+# Fix LXC from throwing error System lacks NETNS support (bz #1084902)
+%patch0001 -p1
 
 %build
 %if ! %{with_xen}
@@ -2220,6 +2226,9 @@ exit 0
 %doc examples/systemtap
 
 %changelog
+* Fri Apr 11 2014 Cole Robinson <crobinso@redhat.com> - 1.2.3-2
+- Fix LXC from throwing error System lacks NETNS support (bz #1084902)
+
 * Tue Apr 01 2014 Cole Robinson <crobinso@redhat.com> - 1.2.3-1
 - Rebased to version 1.2.3
 
