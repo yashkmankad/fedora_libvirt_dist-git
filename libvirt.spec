@@ -132,6 +132,7 @@
 %define with_libssh2       0%{!?_without_libssh2:0}
 %define with_wireshark     0%{!?_without_wireshark:0}
 %define with_systemd_daemon 0%{!?_without_systemd_daemon:0}
+%define with_pm_utils      1
 
 # Non-server/HV driver defaults which are always enabled
 %define with_sasl          0%{!?_without_sasl:1}
@@ -182,6 +183,7 @@
 %if 0%{?fedora} >= 17 || 0%{?rhel} >= 7
     %define with_systemd 1
     %define with_systemd_daemon 1
+    %define with_pm_utils 0
 %endif
 
 # Fedora 18 / RHEL-7 are first where firewalld support is enabled
@@ -387,8 +389,8 @@
 
 Summary: Library providing a simple virtualization API
 Name: libvirt
-Version: 1.2.3
-Release: 2%{?dist}%{?extra_release}
+Version: 1.2.4
+Release: 1%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -398,9 +400,6 @@ URL: http://libvirt.org/
     %define mainturl stable_updates/
 %endif
 Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
-
-# Fix LXC from throwing error System lacks NETNS support (bz #1084902)
-Patch0001: 0001-LXC-Fix-return-code-evaulation-in-lxcCheckNetNsSuppo.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -1141,8 +1140,10 @@ Requires: nc
 Requires: gettext
 # Needed by virt-pki-validate script.
 Requires: gnutls-utils
+%if %{with_pm_utils}
 # Needed for probing the power management features of the host.
 Requires: pm-utils
+%endif
 %if %{with_sasl}
 Requires: cyrus-sasl
 # Not technically required, but makes 'out-of-box' config
@@ -1208,9 +1209,6 @@ driver
 
 %prep
 %setup -q
-
-# Fix LXC from throwing error System lacks NETNS support (bz #1084902)
-%patch0001 -p1
 
 %build
 %if ! %{with_xen}
@@ -1401,6 +1399,10 @@ driver
     %define _without_systemd_daemon --without-systemd-daemon
 %endif
 
+%if ! %{with_pm_utils}
+    %define _without_pm_utils --without-pm-utils
+%endif
+
 %define when  %(date +"%%F-%%T")
 %define where %(hostname)
 %define who   %{?packager}%{!?packager:Unknown}
@@ -1477,6 +1479,7 @@ rm -f po/stamp-po
            %{?_with_firewalld} \
            %{?_without_wireshark} \
            %{?_without_systemd_daemon} \
+           %{?_without_pm_utils} \
            %{with_packager} \
            %{with_packager_version} \
            --with-qemu-user=%{qemu_user} \
@@ -1495,7 +1498,7 @@ rm -fr %{buildroot}
 # on RHEL 5, thus we need to expand it here.
 make install DESTDIR=%{?buildroot} SYSTEMD_UNIT_DIR=%{_unitdir}
 
-for i in object-events dominfo domsuspend hellolibvirt openauth xml/nwfilter systemtap
+for i in object-events dominfo domsuspend hellolibvirt openauth xml/nwfilter systemtap dommigrate
 do
   (cd examples/$i ; make clean ; rm -rf .deps .libs Makefile Makefile.in)
 done
@@ -1585,12 +1588,11 @@ do
   printf '#!/bin/sh\nexit 0\n' > $i
   chmod +x $i
 done
-# 1.2.3 one test is segfaulting in mock, need to investigate
-#if ! make check VIR_TEST_DEBUG=1
-#then
-#  cat test-suite.log || true
-#  exit 1
-#fi
+if ! make check VIR_TEST_DEBUG=1
+then
+  cat test-suite.log || true
+  exit 1
+fi
 
 %if %{with_libvirtd}
     %if ! %{with_driver_modules}
@@ -2169,8 +2171,7 @@ exit 0
 %{_datadir}/libvirt/schemas/nodedev.rng
 %{_datadir}/libvirt/schemas/nwfilter.rng
 %{_datadir}/libvirt/schemas/secret.rng
-%{_datadir}/libvirt/schemas/storageencryption.rng
-%{_datadir}/libvirt/schemas/storagefilefeatures.rng
+%{_datadir}/libvirt/schemas/storagecommon.rng
 %{_datadir}/libvirt/schemas/storagepool.rng
 %{_datadir}/libvirt/schemas/storagevol.rng
 
@@ -2221,11 +2222,15 @@ exit 0
 %doc examples/object-events
 %doc examples/dominfo
 %doc examples/domsuspend
+%doc examples/dommigrate
 %doc examples/openauth
 %doc examples/xml
 %doc examples/systemtap
 
 %changelog
+* Tue May  6 2014 Cole Robinson <berrange@redhat.com> - 1.2.4-1
+- Update to 1.2.4 release
+
 * Fri Apr 11 2014 Cole Robinson <crobinso@redhat.com> - 1.2.3-2
 - Fix LXC from throwing error System lacks NETNS support (bz #1084902)
 
