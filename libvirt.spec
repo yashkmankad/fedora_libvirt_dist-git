@@ -55,14 +55,10 @@
 
 %define with_qemu_tcg      %{with_qemu}
 # Change if we ever provide qemu-kvm binaries on non-x86 hosts
-%if 0%{?fedora} >= 18
-    %if 0%{?fedora} >= 20
-        %define qemu_kvm_arches    %{ix86} x86_64 ppc64 s390x %{arm}
-    %else
-        %define qemu_kvm_arches    %{ix86} x86_64 ppc64 s390x
-    %endif
+%if 0%{?fedora} >= 20
+    %define qemu_kvm_arches    %{ix86} x86_64 %{power64} s390x %{arm} aarch64
 %else
-    %define qemu_kvm_arches    %{ix86} x86_64
+    %define qemu_kvm_arches    %{ix86} x86_64 %{power64} s390x
 %endif
 
 %ifarch %{qemu_kvm_arches}
@@ -210,18 +206,6 @@
         %define with_qemu_kvm 0
     %endif
     %define with_xen 0
-%endif
-
-# Fedora doesn't have any QEMU on ppc64 until FC16 - only ppc
-%if 0%{?fedora} && 0%{?fedora} < 16
-    %ifarch ppc64
-        %define with_qemu 0
-    %endif
-%endif
-
-# Fedora doesn't have new enough Xen for libxl until F18
-%if 0%{?fedora} && 0%{?fedora} < 18
-    %define with_libxl 0
 %endif
 
 # PolicyKit was introduced in Fedora 8 / RHEL-6 or newer
@@ -385,7 +369,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 1.2.6
-Release: 1%{?dist}%{?extra_release}
+Release: 2%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -2236,6 +2220,10 @@ exit 0
 %doc examples/systemtap
 
 %changelog
+* Tue Jul 15 2014 Peter Robinson <pbrobinson@fedoraproject.org> 1.2.6-2
+- Enable kvm on aarch64
+- Cleanup F-16/18 conditionals
+
 * Wed Jul  2 2014 Daniel P. Berrange <berrange@redhat.com> - 1.2.6-1
 - Update to 1.2.6 release
 
