@@ -54,17 +54,38 @@
 %define with_vbox          0%{!?_without_vbox:%{server_drivers}}
 
 %define with_qemu_tcg      %{with_qemu}
-# Change if we ever provide qemu-kvm binaries on non-x86 hosts
-%if 0%{?fedora} >= 20
-    %define qemu_kvm_arches    %{ix86} x86_64 %{power64} s390x %{arm} aarch64
-%else
-    %define qemu_kvm_arches    %{ix86} x86_64 %{power64} s390x
+
+%define qemu_kvm_arches %{ix86} x86_64
+
+%if 0%{?fedora}
+    %if 0%{?fedora} < 16
+        # Fedora doesn't have any QEMU on ppc64 until FC16 - only ppc
+        # I think F17 is the first release with the power64 macro
+        %ifarch ppc64
+            %define with_qemu_tcg 0
+        %endif
+    %endif
+    %if 0%{?fedora} >= 18
+        %define qemu_kvm_arches %{ix86} x86_64 %{power64} s390x
+    %endif
+    %if 0%{?fedora} >= 20
+        %define qemu_kvm_arches %{ix86} x86_64 %{power64} s390x %{arm} aarch64
+    %endif
+%endif
+
+%if 0%{?rhel}
+    %define with_qemu_tcg 0
+    %define qemu_kvm_arches x86_64
 %endif
 
 %ifarch %{qemu_kvm_arches}
     %define with_qemu_kvm      %{with_qemu}
 %else
     %define with_qemu_kvm      0
+%endif
+
+%if ! %{with_qemu_tcg} && ! %{with_qemu_kvm}
+    %define with_qemu 0
 %endif
 
 # Then the hypervisor drivers that run outside libvirtd, in libvirt.so
@@ -187,25 +208,19 @@
     %define with_firewalld 1
 %endif
 
-# RHEL-5 has restricted QEMU to x86_64 only and is too old for LXC
+# RHEL-5 is too old for LXC
 %if 0%{?rhel} == 5
-    %define with_qemu_tcg 0
-    %ifnarch x86_64
-        %define with_qemu 0
-        %define with_qemu_kvm 0
-    %endif
     %define with_lxc 0
 %endif
 
-# RHEL-6 has restricted QEMU to x86_64 only, stopped including Xen
-# on all archs. Other archs all have LXC available though
+# RHEL-6 stopped including Xen on all archs.
 %if 0%{?rhel} >= 6
-    %define with_qemu_tcg 0
-    %ifnarch x86_64
-        %define with_qemu 0
-        %define with_qemu_kvm 0
-    %endif
     %define with_xen 0
+%endif
+
+# Fedora doesn't have new enough Xen for libxl until F18
+%if 0%{?fedora} && 0%{?fedora} < 18
+    %define with_libxl 0
 %endif
 
 # PolicyKit was introduced in Fedora 8 / RHEL-6 or newer
@@ -246,12 +261,12 @@
 %endif
 
 # Enable sanlock library for lock management with QEMU
-# Sanlock is available only on x86_64 for RHEL
+# Sanlock is available only on arches where kvm is available for RHEL
 %if 0%{?fedora} >= 16
     %define with_sanlock 0%{!?_without_sanlock:%{server_drivers}}
 %endif
 %if 0%{?rhel} >= 6
-    %ifarch x86_64
+    %ifarch %{qemu_kvm_arches}
         %define with_sanlock 0%{!?_without_sanlock:%{server_drivers}}
     %endif
 %endif
@@ -262,9 +277,12 @@
 %endif
 
 # Enable wireshark plugins for all distros shipping libvirt 1.2.2 or newer
-%if 0%{?fedora} >= 21
-    %define with_wireshark 0%{!?_without_wireshark:1}
-%endif
+#%if 0%{?fedora} >= 21
+#    %define with_wireshark 0%{!?_without_wireshark:1}
+#%endif
+# Except this is presently busted on F21/rawhide with wireshark 1.12.0
+# https://bugzilla.redhat.com/show_bug.cgi?id=1129419
+%define with_wireshark 0
 
 # Disable some drivers when building without libvirt daemon.
 # The logic is the same as in configure.ac
@@ -368,8 +386,8 @@
 
 Summary: Library providing a simple virtualization API
 Name: libvirt
-Version: 1.2.6
-Release: 2%{?dist}%{?extra_release}
+Version: 1.2.7
+Release: 1%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -379,6 +397,10 @@ URL: http://libvirt.org/
     %define mainturl stable_updates/
 %endif
 Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
+
+Patch0001: 0001-blockjob-correctly-report-active-commit-for-job-info.patch
+Patch0002: 0002-blockjob-avoid-memory-leak-during-block-pivot.patch
+Patch0003: 0003-blockjob-fix-use-after-free-in-blockcopy.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -506,7 +528,9 @@ BuildRequires: libapparmor-devel
 %if %{with_network}
 BuildRequires: dnsmasq >= 2.41
 BuildRequires: iptables
+    %if (0%{?fedora} && 0%{?fedora} < 17) || (0%{?rhel} && 0%{?rhel} < 7)
 BuildRequires: iptables-ipv6
+    %endif
 BuildRequires: radvd
 %endif
 %if %{with_nwfilter}
@@ -517,10 +541,14 @@ BuildRequires: module-init-tools
 BuildRequires: cyrus-sasl-devel
 %endif
 %if %{with_polkit}
-    %if 0%{?fedora} >= 12 || 0%{?rhel} >= 6
-BuildRequires: polkit-devel >= 0.93
+    %if 0%{?fedora} >= 20 || 0%{?rhel} >= 7
+BuildRequires: polkit-devel >= 0.112
     %else
+        %if 0%{?fedora} >= 12 || 0%{?rhel} >= 6
+BuildRequires: polkit-devel >= 0.93
+        %else
 BuildRequires: PolicyKit-devel >= 0.6
+        %endif
     %endif
 %endif
 %if %{with_storage_fs}
@@ -680,10 +708,14 @@ Requires: avahi-libs
         %endif
     %endif
     %if %{with_polkit}
-        %if 0%{?fedora} >= 12 || 0%{?rhel} >=6
-Requires: polkit >= 0.93
+        %if 0%{?fedora} >= 20 || 0%{?rhel} >= 7
+Requires: polkit >= 0.112
         %else
+            %if 0%{?fedora} >= 12 || 0%{?rhel} >=6
+Requires: polkit >= 0.93
+            %else
 Requires: PolicyKit >= 0.6
+            %endif
         %endif
     %endif
     %if %{with_cgconfig}
@@ -750,7 +782,9 @@ Requires: libvirt-daemon = %{version}-%{release}
 Requires: dnsmasq >= 2.41
 Requires: radvd
 Requires: iptables
+            %if (0%{?fedora} && 0%{?fedora} < 17) || (0%{?rhel} && 0%{?rhel} < 7)
 Requires: iptables-ipv6
+            %endif
 
 %description daemon-driver-network
 The network driver plugin for the libvirtd daemon, providing
@@ -765,7 +799,9 @@ Summary: Nwfilter driver plugin for the libvirtd daemon
 Group: Development/Libraries
 Requires: libvirt-daemon = %{version}-%{release}
 Requires: iptables
+            %if (0%{?fedora} && 0%{?fedora} < 17) || (0%{?rhel} && 0%{?rhel} < 7)
 Requires: iptables-ipv6
+            %endif
 Requires: ebtables
 
 %description daemon-driver-nwfilter
@@ -1189,6 +1225,10 @@ driver
 %prep
 %setup -q
 
+%patch0001 -p1
+%patch0002 -p1
+%patch0003 -p1
+
 %build
 %if ! %{with_xen}
     %define _without_xen --without-xen
@@ -1477,7 +1517,7 @@ rm -fr %{buildroot}
 # on RHEL 5, thus we need to expand it here.
 make install DESTDIR=%{?buildroot} SYSTEMD_UNIT_DIR=%{_unitdir}
 
-for i in object-events dominfo domsuspend hellolibvirt openauth xml/nwfilter systemtap dommigrate
+for i in object-events dominfo domsuspend hellolibvirt openauth xml/nwfilter systemtap dommigrate domtop
 do
   (cd examples/$i ; make clean ; rm -rf .deps .libs Makefile Makefile.in)
 done
@@ -2148,6 +2188,7 @@ exit 0
 %{_datadir}/libvirt/schemas/basictypes.rng
 %{_datadir}/libvirt/schemas/capability.rng
 %{_datadir}/libvirt/schemas/domain.rng
+%{_datadir}/libvirt/schemas/domaincaps.rng
 %{_datadir}/libvirt/schemas/domaincommon.rng
 %{_datadir}/libvirt/schemas/domainsnapshot.rng
 %{_datadir}/libvirt/schemas/interface.rng
@@ -2220,6 +2261,9 @@ exit 0
 %doc examples/systemtap
 
 %changelog
+* Tue Aug 12 2014 Cole Robinson <crobinso@redhat.com> - 1.2.7-1
+- Rebased to version 1.2.7
+
 * Tue Jul 15 2014 Peter Robinson <pbrobinson@fedoraproject.org> 1.2.6-2
 - Enable kvm on aarch64
 - Cleanup F-16/18 conditionals
