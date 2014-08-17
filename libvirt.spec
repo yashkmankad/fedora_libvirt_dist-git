@@ -387,7 +387,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 1.2.7
-Release: 1%{?dist}%{?extra_release}
+Release: 2%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -2261,6 +2261,9 @@ exit 0
 %doc examples/systemtap
 
 %changelog
+* Sun Aug 17 2014 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.2.7-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_21_22_Mass_Rebuild
+
 * Tue Aug 12 2014 Cole Robinson <crobinso@redhat.com> - 1.2.7-1
 - Rebased to version 1.2.7
 
