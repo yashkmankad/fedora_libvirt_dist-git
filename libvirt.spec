@@ -267,6 +267,9 @@
 %if 0%{?fedora} >= 21
     %define with_wireshark 0%{!?_without_wireshark:1}
 %endif
+# Except this is presently busted on F21/rawhide with wireshark 1.12.0
+# https://bugzilla.redhat.com/show_bug.cgi?id=1129419
+%define with_wireshark 0
 
 # Disable some drivers when building without libvirt daemon.
 # The logic is the same as in configure.ac
