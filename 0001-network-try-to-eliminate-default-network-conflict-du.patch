@@ -1,0 +1,88 @@
+From 935cd0c56643d28a5c60ff6658b16bd4c2fd920c Mon Sep 17 00:00:00 2001
+From: Laine Stump <laine@laine.org>
+Date: Wed, 10 Sep 2014 13:10:45 -0400
+Subject: [PATCH] network: try to eliminate default network conflict during
+ package install
+
+Sometimes libvirt is installed on a host that is already using the
+network 192.168.122.0/24. If the libvirt-daemon-config-network package
+is installed, this creates a conflict, since that package has been
+hard-coded to create a virtual network that also uses
+192.168.122.0/24. In the past libvirt has attempted to warn of /
+remediate this situation by checking for conflicting routes when the
+network is started, but it turns out that isn't always useful (for
+example in the case that the *other* interface/network creating the
+conflict hasn't yet been started at the time libvirtd start its own
+networks).
+
+This patch attempts to catch the problem earlier - at install
+time. During the %post install script for
+libvirt-daemon-config-network, we use a case statement to look through
+the output of "ip route show" for a route that exactly matches
+192.168.122.0/24, and if found we search for a similar route that
+*doesn't* match (e.g. 192.168.124.0/24) (note that the search starts
+with "124" instead of 123 because of reports of people already
+modifying their L1 host's network to 192.168.123.0/24 in an attempt to
+solve exactly the problem we are also trying to solve).  When we find
+an available route, we just replace all occurrences of "122" in the
+default.xml that is being created with the newly found 192.168
+subnet. This could obviously be made more complicated - examine the
+template defaul.xml to automatically determine the existing network
+address and mask rather than hard coding it in the specfile, etc, but
+this scripting is simpler and gets the job done as long as we continue
+to use 192.168.122.0/24 in the template. (If anyone with mad bash
+skillz wants to suggest something to do that, by all means please do).
+
+This is intended to at least "further reduce" occurrence of the
+problems detailed in:
+
+  https://bugzilla.redhat.com/show_bug.cgi?id=811967
+
+(cherry picked from commit 5f71959667e4902d738a849e7c9391e794fccf22)
+---
+ libvirt.spec.in | 31 ++++++++++++++++++++++++++++++-
+ 1 file changed, 30 insertions(+), 1 deletion(-)
+
+diff --git a/libvirt.spec.in b/libvirt.spec.in
+index 4dc801b..75a91f5 100644
+--- a/libvirt.spec.in
++++ b/libvirt.spec.in
+@@ -1732,8 +1732,37 @@ fi
+     %if %{with_network}
+ %post daemon-config-network
+ if test $1 -eq 1 && test ! -f %{_sysconfdir}/libvirt/qemu/networks/default.xml ; then
++    # see if the network used by default network creates a conflict,
++    # and try to resolve it
++    # NB: 192.168.122.0/24 is used in the default.xml template file;
++    # do not modify any of those values here without also modifying
++    # them in the template.
++    orig_sub=122
++    sub=${orig_sub}
++    nl='
++'
++    routes="${nl}$(ip route show | cut -d' ' -f1)"
++    case ${routes} in
++      *"${nl}192.168.${orig_sub}.0/24${nl}"*)
++        # there was a match, so we need to look for an unused subnet
++        for new_sub in $(seq 124 254); do
++          case ${routes} in
++          *"${nl}192.168.${new_sub}.0/24${nl}"*)
++            ;;
++          *)
++            sub=$new_sub
++            break;
++            ;;
++          esac
++        done
++        ;;
++      *)
++        ;;
++    esac
++
+     UUID=`/usr/bin/uuidgen`
+-    sed -e "s,</name>,</name>\n  <uuid>$UUID</uuid>," \
++    sed -e "s/${orig_sub}/${sub}/g" \
++        -e "s,</name>,</name>\n  <uuid>$UUID</uuid>," \
+          < %{_datadir}/libvirt/networks/default.xml \
+          > %{_sysconfdir}/libvirt/qemu/networks/default.xml
+     ln -s ../default.xml %{_sysconfdir}/libvirt/qemu/networks/autostart/default.xml

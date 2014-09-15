@@ -1,0 +1,24 @@
+From 2950887a9e7800e0421dadb0b9c348adb087deca Mon Sep 17 00:00:00 2001
+From: Cole Robinson <crobinso@redhat.com>
+Date: Mon, 15 Sep 2014 14:49:35 -0400
+Subject: [PATCH] spec: Don't build wireshark on f21 (non upstream)
+
+wireshark bug: https://bugzilla.redhat.com/show_bug.cgi?id=1129419
+---
+ libvirt.spec.in | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/libvirt.spec.in b/libvirt.spec.in
+index 0741c73..7d8748d 100644
+--- a/libvirt.spec.in
++++ b/libvirt.spec.in
+@@ -267,6 +267,9 @@
+ %if 0%{?fedora} >= 21
+     %define with_wireshark 0%{!?_without_wireshark:1}
+ %endif
++# Except this is presently busted on F21/rawhide with wireshark 1.12.0
++# https://bugzilla.redhat.com/show_bug.cgi?id=1129419
++%define with_wireshark 0
+ 
+ # Disable some drivers when building without libvirt daemon.
+ # The logic is the same as in configure.ac

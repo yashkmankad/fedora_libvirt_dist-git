@@ -366,7 +366,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 1.2.8
-Release: 1%{?dist}%{?extra_release}
+Release: 2%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -376,6 +376,21 @@ URL: http://libvirt.org/
     %define mainturl stable_updates/
 %endif
 Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
+
+# Generate non-colliding network IP range at RPM install time (bz
+# #811967)
+Patch0001: 0001-network-try-to-eliminate-default-network-conflict-du.patch
+Patch0002: 0002-network-detect-conflicting-route-even-if-it-is-the-f.patch
+# Fix directory creation at session daemon startup (bz #1139672)
+# (Patch 5 is posted but not in git as of 2014-09-15)
+Patch0003: 0003-rpc-reformat-the-flow-to-make-a-bit-more-sense.patch
+Patch0004: 0004-remove-redundant-pidfile-path-constructions.patch
+Patch0005: 0005-util-fix-potential-leak-in-error-codepath.patch
+Patch0006: 0006-util-get-rid-of-unnecessary-umask-call.patch
+Patch0007: 0007-rpc-make-daemon-spawning-a-bit-more-intelligent.patch
+# Disable wireshark building, currently broken on f21/rawhide
+# Nonupstream patch
+Patch0008: 0008-spec-Don-t-build-wireshark-on-f21-non-upstream.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -1201,6 +1216,21 @@ driver
 %prep
 %setup -q
 
+# Generate non-colliding network IP range at RPM install time (bz
+# #811967)
+%patch0001 -p1
+%patch0002 -p1
+# Fix directory creation at session daemon startup (bz #1139672)
+# (Patch 5 is posted but not in git as of 2014-09-15)
+%patch0003 -p1
+%patch0004 -p1
+%patch0005 -p1
+%patch0006 -p1
+%patch0007 -p1
+# Disable wireshark building, currently broken on f21/rawhide
+# Nonupstream patch
+%patch0008 -p1
+
 %build
 %if ! %{with_xen}
     %define _without_xen --without-xen
@@ -1735,8 +1765,37 @@ fi
     %if %{with_network}
 %post daemon-config-network
 if test $1 -eq 1 && test ! -f %{_sysconfdir}/libvirt/qemu/networks/default.xml ; then
+    # see if the network used by default network creates a conflict,
+    # and try to resolve it
+    # NB: 192.168.122.0/24 is used in the default.xml template file;
+    # do not modify any of those values here without also modifying
+    # them in the template.
+    orig_sub=122
+    sub=${orig_sub}
+    nl='
+'
+    routes="${nl}$(ip route show | cut -d' ' -f1)${nl}"
+    case ${routes} in
+      *"${nl}192.168.${orig_sub}.0/24${nl}"*)
+        # there was a match, so we need to look for an unused subnet
+        for new_sub in $(seq 124 254); do
+          case ${routes} in
+          *"${nl}192.168.${new_sub}.0/24${nl}"*)
+            ;;
+          *)
+            sub=$new_sub
+            break;
+            ;;
+          esac
+        done
+        ;;
+      *)
+        ;;
+    esac
+
     UUID=`/usr/bin/uuidgen`
-    sed -e "s,</name>,</name>\n  <uuid>$UUID</uuid>," \
+    sed -e "s/${orig_sub}/${sub}/g" \
+        -e "s,</name>,</name>\n  <uuid>$UUID</uuid>," \
          < %{_datadir}/libvirt/networks/default.xml \
          > %{_sysconfdir}/libvirt/qemu/networks/default.xml
     ln -s ../default.xml %{_sysconfdir}/libvirt/qemu/networks/autostart/default.xml
@@ -2250,6 +2309,11 @@ exit 0
 %doc examples/systemtap
 
 %changelog
+* Mon Sep 15 2014 Cole Robinson <crobinso@redhat.com> - 1.2.8-2
+- Generate non-colliding network IP range at RPM install time (bz #811967)
+- Fix directory creation at session daemon startup (bz #1139672)
+- Disable wireshark building, currently broken on f21/rawhide
+
 * Fri Sep  5 2014 Daniel P. Berrange <berrange@redhat.com> - 1.2.8-1
 - Update to 1.2.8 release
 
