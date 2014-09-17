@@ -366,7 +366,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 1.2.8
-Release: 2%{?dist}%{?extra_release}
+Release: 3%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -391,6 +391,8 @@ Patch0007: 0007-rpc-make-daemon-spawning-a-bit-more-intelligent.patch
 # Disable wireshark building, currently broken on f21/rawhide
 # Nonupstream patch
 Patch0008: 0008-spec-Don-t-build-wireshark-on-f21-non-upstream.patch
+# Fix preun script (bz #1142367)
+Patch0009: 0009-spec-Fix-preun-script-for-daemon.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -1230,6 +1232,8 @@ driver
 # Disable wireshark building, currently broken on f21/rawhide
 # Nonupstream patch
 %patch0008 -p1
+# Fix preun script (bz #1142367)
+%patch0009 -p1
 
 %build
 %if ! %{with_xen}
@@ -1710,11 +1714,7 @@ fi
 %preun daemon
     %if %{with_systemd}
         %if %{with_systemd_macros}
-            %systemd_preun \
-                libvirtd.socket \
-                libvirtd.service \
-                virtlockd.socket \
-                virtlockd.service
+            %systemd_preun libvirtd.socket libvirtd.service virtlockd.socket virtlockd.service
         %else
 if [ $1 -eq 0 ] ; then
     # Package removal, not upgrade
@@ -2309,6 +2309,9 @@ exit 0
 %doc examples/systemtap
 
 %changelog
+* Wed Sep 17 2014 Cole Robinson <crobinso@redhat.com> - 1.2.8-3
+- Fix preun script (bz #1142367)
+
 * Mon Sep 15 2014 Cole Robinson <crobinso@redhat.com> - 1.2.8-2
 - Generate non-colliding network IP range at RPM install time (bz #811967)
 - Fix directory creation at session daemon startup (bz #1139672)

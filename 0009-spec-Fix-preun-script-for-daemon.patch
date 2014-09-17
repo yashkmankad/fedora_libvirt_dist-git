@@ -1,0 +1,32 @@
+From 09f0ff32b8925131c058de768751d3368f47a722 Mon Sep 17 00:00:00 2001
+From: Jiri Denemark <jdenemar@redhat.com>
+Date: Wed, 3 Sep 2014 10:51:14 +0200
+Subject: [PATCH] spec: Fix preun script for daemon
+
+%systemd_preun macro cannot be split into several lines.
+
+https://bugzilla.redhat.com/show_bug.cgi?id=1136736
+
+Signed-off-by: Jiri Denemark <jdenemar@redhat.com>
+(cherry picked from commit 6209454d5b10c2d89faab8a56b250f1569d823fe)
+---
+ libvirt.spec.in | 6 +-----
+ 1 file changed, 1 insertion(+), 5 deletions(-)
+
+diff --git a/libvirt.spec.in b/libvirt.spec.in
+index 7d8748d..6129f00 100644
+--- a/libvirt.spec.in
++++ b/libvirt.spec.in
+@@ -1680,11 +1680,7 @@ fi
+ %preun daemon
+     %if %{with_systemd}
+         %if %{with_systemd_macros}
+-            %systemd_preun \
+-                libvirtd.socket \
+-                libvirtd.service \
+-                virtlockd.socket \
+-                virtlockd.service
++            %systemd_preun libvirtd.socket libvirtd.service virtlockd.socket virtlockd.service
+         %else
+ if [ $1 -eq 0 ] ; then
+     # Package removal, not upgrade
