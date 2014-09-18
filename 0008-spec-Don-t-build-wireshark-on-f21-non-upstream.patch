@@ -1,4 +1,4 @@
-From 2950887a9e7800e0421dadb0b9c348adb087deca Mon Sep 17 00:00:00 2001
+From d437ccd8fef17c2bb119e98a034bdc56ff9425b2 Mon Sep 17 00:00:00 2001
 From: Cole Robinson <crobinso@redhat.com>
 Date: Mon, 15 Sep 2014 14:49:35 -0400
 Subject: [PATCH] spec: Don't build wireshark on f21 (non upstream)

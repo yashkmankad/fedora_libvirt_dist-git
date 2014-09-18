@@ -1,0 +1,579 @@
+From e2354416fdccb9649f080cdf912c5dc16d0eb578 Mon Sep 17 00:00:00 2001
+From: Michal Privoznik <mprivozn@redhat.com>
+Date: Thu, 7 Aug 2014 16:59:21 +0200
+Subject: [PATCH] qemu: Automatically create NVRAM store
+
+When using split UEFI image, it may come handy if libvirt manages per
+domain _VARS file automatically. While the _CODE file is RO and can be
+shared among multiple domains, you certainly don't want to do that on
+the _VARS file. This latter one needs to be per domain. So at the
+domain startup process, if it's determined that domain needs _VARS
+file it's copied from this master _VARS file. The location of the
+master file is configurable in qemu.conf.
+
+Temporary, on per domain basis the location of master NVRAM file can
+be overridden by this @template attribute I'm inventing to the
+<nvram/> element. All it does is holding path to the master NVRAM file
+from which local copy is created. If that's the case, the map in
+qemu.conf is not consulted.
+
+Signed-off-by: Michal Privoznik <mprivozn@redhat.com>
+Acked-by: Laszlo Ersek <lersek@redhat.com>
+(cherry picked from commit 742b08e30fd503bc992e864828cbabd7e6a099ec)
+---
+ docs/formatdomain.html.in                          |  11 +-
+ docs/schemas/domaincommon.rng                      |   9 +-
+ libvirt.spec.in                                    |   2 +
+ src/Makefile.am                                    |   1 +
+ src/conf/domain_conf.c                             |  11 +-
+ src/conf/domain_conf.h                             |   1 +
+ src/qemu/libvirtd_qemu.aug                         |   3 +
+ src/qemu/qemu.conf                                 |  14 +++
+ src/qemu/qemu_conf.c                               |  94 ++++++++++++++
+ src/qemu/qemu_conf.h                               |   5 +
+ src/qemu/qemu_process.c                            | 137 +++++++++++++++++++++
+ src/qemu/test_libvirtd_qemu.aug.in                 |   3 +
+ tests/domainschemadata/domain-bios-nvram-empty.xml |  40 ++++++
+ 13 files changed, 325 insertions(+), 6 deletions(-)
+ create mode 100644 tests/domainschemadata/domain-bios-nvram-empty.xml
+
+diff --git a/docs/formatdomain.html.in b/docs/formatdomain.html.in
+index 757035a..a2ea758 100644
+--- a/docs/formatdomain.html.in
++++ b/docs/formatdomain.html.in
+@@ -103,7 +103,7 @@
+   &lt;os&gt;
+     &lt;type&gt;hvm&lt;/type&gt;
+     &lt;loader readonly='on' type='rom'&gt;/usr/lib/xen/boot/hvmloader&lt;/loader&gt;
+-    &lt;nvram&gt;/var/lib/libvirt/nvram/guest_VARS.fd&lt;/nvram&gt;
++    &lt;nvram template='/usr/share/OVMF/OVMF_VARS.fd'&gt;/var/lib/libvirt/nvram/guest_VARS.fd&lt;/nvram&gt;
+     &lt;boot dev='hd'/&gt;
+     &lt;boot dev='cdrom'/&gt;
+     &lt;bootmenu enable='yes' timeout='3000'/&gt;
+@@ -142,9 +142,12 @@
+         <code>pflash</code>.</dd>
+       <dt><code>nvram</code></dt>
+       <dd>Some UEFI firmwares may want to use a non-volatile memory to store
+-        some variables. In the host, this is represented as a file and the
+-        path to the file is stored in this element. <span class="since">Since
+-        1.2.8</span></dd>
++        some variables. In the host, this is represented as a file and the path
++        to the file is stored in this element. Moreover, when the domain is
++        started up libvirt copies so called master NVRAM store file defined
++        in <code>qemu.conf</code>. If needed, the <code>template</code>
++        attribute can be used to per domain override map of master NVRAM stores
++        from the config file. <span class="since">Since 1.2.8</span></dd>
+       <dt><code>boot</code></dt>
+       <dd>The <code>dev</code> attribute takes one of the values "fd", "hd",
+         "cdrom" or "network" and is used to specify the next boot device
+diff --git a/docs/schemas/domaincommon.rng b/docs/schemas/domaincommon.rng
+index 5d9c21c..6ae940a 100644
+--- a/docs/schemas/domaincommon.rng
++++ b/docs/schemas/domaincommon.rng
+@@ -263,7 +263,14 @@
+         </optional>
+         <optional>
+           <element name="nvram">
+-            <ref name="absFilePath"/>
++            <optional>
++              <attribute name="template">
++                <ref name="absFilePath"/>
++              </attribute>
++            </optional>
++            <optional>
++              <ref name="absFilePath"/>
++            </optional>
+           </element>
+         </optional>
+         <optional>
+diff --git a/libvirt.spec.in b/libvirt.spec.in
+index 6129f00..935b8c8 100644
+--- a/libvirt.spec.in
++++ b/libvirt.spec.in
+@@ -1970,6 +1970,7 @@ exit 0
+ %dir %attr(0750, %{qemu_user}, %{qemu_group}) %{_localstatedir}/lib/libvirt/qemu/
+ %dir %attr(0750, %{qemu_user}, %{qemu_group}) %{_localstatedir}/lib/libvirt/qemu/channel/
+ %dir %attr(0750, %{qemu_user}, %{qemu_group}) %{_localstatedir}/lib/libvirt/qemu/channel/target/
++%dir %attr(0750, %{qemu_user}, %{qemu_group}) %{_localstatedir}/lib/libvirt/qemu/nvram/
+ %dir %attr(0750, %{qemu_user}, %{qemu_group}) %{_localstatedir}/cache/libvirt/qemu/
+ %{_datadir}/augeas/lenses/libvirtd_qemu.aug
+ %{_datadir}/augeas/lenses/tests/test_libvirtd_qemu.aug
+@@ -2072,6 +2073,7 @@ exit 0
+ %dir %attr(0750, %{qemu_user}, %{qemu_group}) %{_localstatedir}/lib/libvirt/qemu/
+ %dir %attr(0750, %{qemu_user}, %{qemu_group}) %{_localstatedir}/lib/libvirt/qemu/channel/
+ %dir %attr(0750, %{qemu_user}, %{qemu_group}) %{_localstatedir}/lib/libvirt/qemu/channel/target/
++%dir %attr(0750, %{qemu_user}, %{qemu_group}) %{_localstatedir}/lib/libvirt/qemu/nvram/
+ %dir %attr(0750, %{qemu_user}, %{qemu_group}) %{_localstatedir}/cache/libvirt/qemu/
+ %{_datadir}/augeas/lenses/libvirtd_qemu.aug
+ %{_datadir}/augeas/lenses/tests/test_libvirtd_qemu.aug
+diff --git a/src/Makefile.am b/src/Makefile.am
+index 46e411e..fa741a8 100644
+--- a/src/Makefile.am
++++ b/src/Makefile.am
+@@ -2679,6 +2679,7 @@ endif WITH_SANLOCK
+ if WITH_QEMU
+ 	$(MKDIR_P) "$(DESTDIR)$(localstatedir)/lib/libvirt/qemu"
+ 	$(MKDIR_P) "$(DESTDIR)$(localstatedir)/lib/libvirt/qemu/channel/target"
++	$(MKDIR_P) "$(DESTDIR)$(localstatedir)/lib/libvirt/qemu/nvram"
+ 	$(MKDIR_P) "$(DESTDIR)$(localstatedir)/run/libvirt/qemu"
+ 	$(MKDIR_P) "$(DESTDIR)$(localstatedir)/cache/libvirt/qemu"
+ 	$(MKDIR_P) "$(DESTDIR)$(localstatedir)/log/libvirt/qemu"
+diff --git a/src/conf/domain_conf.c b/src/conf/domain_conf.c
+index 6ee5c17..84f5f1d 100644
+--- a/src/conf/domain_conf.c
++++ b/src/conf/domain_conf.c
+@@ -2023,6 +2023,7 @@ virDomainLoaderDefFree(virDomainLoaderDefPtr loader)
+ 
+     VIR_FREE(loader->path);
+     VIR_FREE(loader->nvram);
++    VIR_FREE(loader->templt);
+     VIR_FREE(loader);
+ }
+ 
+@@ -12768,6 +12769,7 @@ virDomainDefParseXML(xmlDocPtr xml,
+                 goto error;
+ 
+             def->os.loader->nvram = virXPathString("string(./os/nvram[1])", ctxt);
++            def->os.loader->templt = virXPathString("string(./os/nvram[1]/@template)", ctxt);
+         }
+     }
+ 
+@@ -17866,7 +17868,14 @@ virDomainLoaderDefFormat(virBufferPtr buf,
+     virBufferAsprintf(buf, " type='%s'>", type);
+ 
+     virBufferEscapeString(buf, "%s</loader>\n", loader->path);
+-    virBufferEscapeString(buf, "<nvram>%s</nvram>\n", loader->nvram);
++    if (loader->nvram || loader->templt) {
++        virBufferAddLit(buf, "<nvram");
++        virBufferEscapeString(buf, " template='%s'", loader->templt);
++        if (loader->nvram)
++            virBufferEscapeString(buf, ">%s</nvram>\n", loader->nvram);
++        else
++            virBufferAddLit(buf, "/>\n");
++    }
+ }
+ 
+ static bool
+diff --git a/src/conf/domain_conf.h b/src/conf/domain_conf.h
+index c97a10c..3316fb6 100644
+--- a/src/conf/domain_conf.h
++++ b/src/conf/domain_conf.h
+@@ -1644,6 +1644,7 @@ struct _virDomainLoaderDef {
+     int readonly;   /* enum virTristateBool */
+     virDomainLoader type;
+     char *nvram;    /* path to non-volatile RAM */
++    char *templt;   /* user override of path to master nvram */
+ };
+ 
+ void virDomainLoaderDefFree(virDomainLoaderDefPtr loader);
+diff --git a/src/qemu/libvirtd_qemu.aug b/src/qemu/libvirtd_qemu.aug
+index e7db7fe..62951da 100644
+--- a/src/qemu/libvirtd_qemu.aug
++++ b/src/qemu/libvirtd_qemu.aug
+@@ -88,6 +88,8 @@ module Libvirtd_qemu =
+ 
+    let log_entry = bool_entry "log_timestamp"
+ 
++   let nvram_entry = str_array_entry "nvram"
++
+    (* Each entry in the config is one of the following ... *)
+    let entry = vnc_entry
+              | spice_entry
+@@ -100,6 +102,7 @@ module Libvirtd_qemu =
+              | rpc_entry
+              | network_entry
+              | log_entry
++             | nvram_entry
+ 
+    let comment = [ label "#comment" . del /#[ \t]*/ "# " .  store /([^ \t\n][^\n]*)?/ . del /\n/ "\n" ]
+    let empty = [ label "#empty" . eol ]
+diff --git a/src/qemu/qemu.conf b/src/qemu/qemu.conf
+index 7bbbe09..79bba36 100644
+--- a/src/qemu/qemu.conf
++++ b/src/qemu/qemu.conf
+@@ -487,3 +487,17 @@
+ # Defaults to 1.
+ #
+ #log_timestamp = 0
++
++
++# Location of master nvram file
++#
++# When a domain is configured to use UEFI instead of standard
++# BIOS it may use a separate storage for UEFI variables. If
++# that's the case libvirt creates the variable store per domain
++# using this master file as image. Each UEFI firmware can,
++# however, have different variables store. Therefore the nvram is
++# a list of strings when a single item is in form of:
++#   ${PATH_TO_UEFI_FW}:${PATH_TO_UEFI_VARS}.
++# Later, when libvirt creates per domain variable store, this
++# list is searched for the master image.
++#nvram = [ "/usr/share/OVMF/OVMF_CODE.fd:/usr/share/OVMF/OVMF_VARS.fd" ]
+diff --git a/src/qemu/qemu_conf.c b/src/qemu/qemu_conf.c
+index e2ec54f..ac10b64 100644
+--- a/src/qemu/qemu_conf.c
++++ b/src/qemu/qemu_conf.c
+@@ -107,6 +107,9 @@ void qemuDomainCmdlineDefFree(qemuDomainCmdlineDefPtr def)
+     VIR_FREE(def);
+ }
+ 
++#define VIR_QEMU_LOADER_FILE_PATH "/usr/share/OVMF/OVMF_CODE.fd"
++#define VIR_QEMU_NVRAM_FILE_PATH "/usr/share/OVMF/OVMF_VARS.fd"
++
+ virQEMUDriverConfigPtr virQEMUDriverConfigNew(bool privileged)
+ {
+     virQEMUDriverConfigPtr cfg;
+@@ -255,6 +258,15 @@ virQEMUDriverConfigPtr virQEMUDriverConfigNew(bool privileged)
+ 
+     cfg->logTimestamp = true;
+ 
++    if (VIR_ALLOC_N(cfg->loader, 1) < 0 ||
++        VIR_ALLOC_N(cfg->nvram, 1) < 0)
++        goto error;
++    cfg->nloader = 1;
++
++    if (VIR_STRDUP(cfg->loader[0], VIR_QEMU_LOADER_FILE_PATH) < 0 ||
++        VIR_STRDUP(cfg->nvram[0], VIR_QEMU_NVRAM_FILE_PATH) < 0)
++        goto error;
++
+     return cfg;
+ 
+  error:
+@@ -305,6 +317,14 @@ static void virQEMUDriverConfigDispose(void *obj)
+     virStringFreeList(cfg->securityDriverNames);
+ 
+     VIR_FREE(cfg->lockManagerName);
++
++    while (cfg->nloader) {
++        VIR_FREE(cfg->loader[cfg->nloader - 1]);
++        VIR_FREE(cfg->nvram[cfg->nloader - 1]);
++        cfg->nloader--;
++    }
++    VIR_FREE(cfg->loader);
++    VIR_FREE(cfg->nvram);
+ }
+ 
+ 
+@@ -328,6 +348,43 @@ virQEMUDriverConfigHugeTLBFSInit(virHugeTLBFSPtr hugetlbfs,
+ }
+ 
+ 
++static int
++virQEMUDriverConfigNVRAMParse(const char *str,
++                              char **loader,
++                              char **nvram)
++{
++    int ret = -1;
++    char **token;
++
++    if (!(token = virStringSplit(str, ":", 0)))
++        goto cleanup;
++
++    if (token[0]) {
++        virSkipSpaces((const char **) &token[0]);
++        if (token[1])
++            virSkipSpaces((const char **) &token[1]);
++    }
++
++    /* Exactly two tokens are expected */
++    if (!token[0] || !token[1] || token[2] ||
++        STREQ(token[0], "") || STREQ(token[1], "")) {
++        virReportError(VIR_ERR_CONF_SYNTAX,
++                       _("Invalid nvram format: '%s'"),
++                       str);
++        goto cleanup;
++    }
++
++    if (VIR_STRDUP(*loader, token[0]) < 0 ||
++        VIR_STRDUP(*nvram, token[1]) < 0)
++        goto cleanup;
++
++    ret = 0;
++ cleanup:
++    virStringFreeList(token);
++    return ret;
++}
++
++
+ int virQEMUDriverConfigLoadFile(virQEMUDriverConfigPtr cfg,
+                                 const char *filename)
+ {
+@@ -654,6 +711,43 @@ int virQEMUDriverConfigLoadFile(virQEMUDriverConfigPtr cfg,
+ 
+     GET_VALUE_BOOL("log_timestamp", cfg->logTimestamp);
+ 
++    if ((p = virConfGetValue(conf, "nvram"))) {
++        size_t len;
++        virConfValuePtr pp;
++
++        CHECK_TYPE("nvram", VIR_CONF_LIST);
++
++        while (cfg->nloader) {
++            VIR_FREE(cfg->loader[cfg->nloader - 1]);
++            VIR_FREE(cfg->nvram[cfg->nloader - 1]);
++            cfg->nloader--;
++        }
++        VIR_FREE(cfg->loader);
++        VIR_FREE(cfg->nvram);
++
++        /* Calc length and check items */
++        for (len = 0, pp = p->list; pp; len++, pp = pp->next) {
++            if (pp->type != VIR_CONF_STRING) {
++                virReportError(VIR_ERR_CONF_SYNTAX, "%s",
++                               _("nvram must be a list of strings"));
++                goto cleanup;
++            }
++        }
++
++        if (len &&
++            (VIR_ALLOC_N(cfg->loader, len) < 0 ||
++             VIR_ALLOC_N(cfg->nvram, len) < 0))
++            goto cleanup;
++        cfg->nloader = len;
++
++        for (i = 0, pp = p->list; pp; i++, pp = pp->next) {
++            if (virQEMUDriverConfigNVRAMParse(pp->str,
++                                              &cfg->loader[i],
++                                              &cfg->nvram[i]) < 0)
++                goto cleanup;
++        }
++    }
++
+     ret = 0;
+ 
+  cleanup:
+diff --git a/src/qemu/qemu_conf.h b/src/qemu/qemu_conf.h
+index ae7ac56..1f521e5 100644
+--- a/src/qemu/qemu_conf.h
++++ b/src/qemu/qemu_conf.h
+@@ -172,6 +172,11 @@ struct _virQEMUDriverConfig {
+     int migrationPortMax;
+ 
+     bool logTimestamp;
++
++    /* Pairs of loader:nvram paths. The list is @nloader items long */
++    char **loader;
++    char **nvram;
++    size_t nloader;
+ };
+ 
+ /* Main driver state */
+diff --git a/src/qemu/qemu_process.c b/src/qemu/qemu_process.c
+index f68dfbe..5b120d4 100644
+--- a/src/qemu/qemu_process.c
++++ b/src/qemu/qemu_process.c
+@@ -67,6 +67,7 @@
+ #include "virstring.h"
+ #include "virhostdev.h"
+ #include "storage/storage_driver.h"
++#include "configmake.h"
+ 
+ #define VIR_FROM_THIS VIR_FROM_QEMU
+ 
+@@ -3734,6 +3735,135 @@ qemuProcessVerifyGuestCPU(virQEMUDriverPtr driver,
+ }
+ 
+ 
++static int
++qemuPrepareNVRAM(virQEMUDriverConfigPtr cfg,
++                 virDomainDefPtr def,
++                 bool migrated)
++{
++    int ret = -1;
++    int srcFD = -1;
++    int dstFD = -1;
++    virDomainLoaderDefPtr loader = def->os.loader;
++    bool generated = false;
++    bool created = false;
++
++    /* Unless domain has RO loader of pflash type, we have
++     * nothing to do here.  If the loader is RW then it's not
++     * using split code and vars feature, so no nvram file needs
++     * to be created. */
++    if (!loader || loader->type != VIR_DOMAIN_LOADER_TYPE_PFLASH ||
++        loader->readonly != VIR_TRISTATE_SWITCH_ON)
++        return 0;
++
++    /* If the nvram path is configured already, there's nothing
++     * we need to do. Unless we are starting the destination side
++     * of migration in which case nvram is configured in the
++     * domain XML but the file doesn't exist yet. Moreover, after
++     * the migration is completed, qemu will invoke a
++     * synchronization write into the nvram file so we don't have
++     * to take care about transmitting the real data on the other
++     * side. */
++    if (loader->nvram && !migrated)
++        return 0;
++
++    /* Autogenerate nvram path if needed.*/
++    if (!loader->nvram) {
++        if (virAsprintf(&loader->nvram,
++                        "%s/lib/libvirt/qemu/nvram/%s_VARS.fd",
++                        LOCALSTATEDIR, def->name) < 0)
++            goto cleanup;
++
++        generated = true;
++    }
++
++    if (!virFileExists(loader->nvram)) {
++        const char *master_nvram_path = loader->templt;
++        ssize_t r;
++
++        if (!loader->templt) {
++            size_t i;
++            for (i = 0; i < cfg->nloader; i++) {
++                if (STREQ(cfg->loader[i], loader->path)) {
++                    master_nvram_path = cfg->nvram[i];
++                    break;
++                }
++            }
++        }
++
++        if (!master_nvram_path) {
++            virReportError(VIR_ERR_OPERATION_FAILED,
++                           _("unable to find any master var store for "
++                             "loader: %s"), loader->path);
++            goto cleanup;
++        }
++
++        if ((srcFD = virFileOpenAs(master_nvram_path, O_RDONLY,
++                                   0, -1, -1, 0)) < 0) {
++            virReportSystemError(-srcFD,
++                                 _("Failed to open file '%s'"),
++                                 master_nvram_path);
++            goto cleanup;
++        }
++        if ((dstFD = virFileOpenAs(loader->nvram,
++                                   O_WRONLY | O_CREAT | O_EXCL,
++                                   S_IRUSR | S_IWUSR,
++                                   cfg->user, cfg->group, 0)) < 0) {
++            virReportSystemError(-dstFD,
++                                 _("Failed to create file '%s'"),
++                                 loader->nvram);
++            goto cleanup;
++        }
++        created = true;
++
++        do {
++            char buf[1024];
++
++            if ((r = saferead(srcFD, buf, sizeof(buf))) < 0) {
++                virReportSystemError(errno,
++                                     _("Unable to read from file '%s'"),
++                                     master_nvram_path);
++                goto cleanup;
++            }
++
++            if (safewrite(dstFD, buf, r) < 0) {
++                virReportSystemError(errno,
++                                     _("Unable to write to file '%s'"),
++                                     loader->nvram);
++                goto cleanup;
++            }
++        } while (r);
++
++        if (VIR_CLOSE(srcFD) < 0) {
++            virReportSystemError(errno,
++                                 _("Unable to close file '%s'"),
++                                 master_nvram_path);
++            goto cleanup;
++        }
++        if (VIR_CLOSE(dstFD) < 0) {
++            virReportSystemError(errno,
++                                 _("Unable to close file '%s'"),
++                                 loader->nvram);
++            goto cleanup;
++        }
++    }
++
++    ret = 0;
++ cleanup:
++    /* We successfully generated the nvram path, but failed to
++     * copy the file content. Roll back. */
++    if (ret < 0) {
++        if (created)
++            unlink(loader->nvram);
++        if (generated)
++            VIR_FREE(loader->nvram);
++    }
++
++    VIR_FORCE_CLOSE(srcFD);
++    VIR_FORCE_CLOSE(dstFD);
++    return ret;
++}
++
++
+ int qemuProcessStart(virConnectPtr conn,
+                      virQEMUDriverPtr driver,
+                      virDomainObjPtr vm,
+@@ -3802,6 +3932,13 @@ int qemuProcessStart(virConnectPtr conn,
+     if (!(caps = virQEMUDriverGetCapabilities(driver, false)))
+         goto cleanup;
+ 
++    /* Some things, paths, ... are generated here and we want them to persist.
++     * Fill them in prior to setting the domain def as transient. */
++    VIR_DEBUG("Generating paths");
++
++    if (qemuPrepareNVRAM(cfg, vm->def, migrateFrom) < 0)
++        goto cleanup;
++
+     /* Do this upfront, so any part of the startup process can add
+      * runtime state to vm->def that won't be persisted. This let's us
+      * report implicit runtime defaults in the XML, like vnc listen/socket
+diff --git a/src/qemu/test_libvirtd_qemu.aug.in b/src/qemu/test_libvirtd_qemu.aug.in
+index 7796acc..d2bc2c0 100644
+--- a/src/qemu/test_libvirtd_qemu.aug.in
++++ b/src/qemu/test_libvirtd_qemu.aug.in
+@@ -74,3 +74,6 @@ module Test_libvirtd_qemu =
+ { "migration_port_min" = "49152" }
+ { "migration_port_max" = "49215" }
+ { "log_timestamp" = "0" }
++{ "nvram"
++    { "1" = "/usr/share/OVMF/OVMF_CODE.fd:/usr/share/OVMF/OVMF_VARS.fd" }
++}
+diff --git a/tests/domainschemadata/domain-bios-nvram-empty.xml b/tests/domainschemadata/domain-bios-nvram-empty.xml
+new file mode 100644
+index 0000000..e7643f3
+--- /dev/null
++++ b/tests/domainschemadata/domain-bios-nvram-empty.xml
+@@ -0,0 +1,40 @@
++<domain type='qemu'>
++  <name>test-bios</name>
++  <uuid>362d1fc1-df7d-193e-5c18-49a71bd1da66</uuid>
++  <memory unit='KiB'>1048576</memory>
++  <currentMemory unit='KiB'>1048576</currentMemory>
++  <vcpu placement='static'>1</vcpu>
++  <os>
++    <type arch='x86_64' machine='pc'>hvm</type>
++    <loader readonly='yes' type='pflash'>/usr/share/OVMF/OVMF_CODE.fd</loader>
++    <nvram template='/usr/share/OVMF/OVMF_VARS.fd'/>
++    <boot dev='hd'/>
++    <bootmenu enable='yes'/>
++  </os>
++  <features>
++    <acpi/>
++  </features>
++  <clock offset='utc'/>
++  <on_poweroff>destroy</on_poweroff>
++  <on_reboot>restart</on_reboot>
++  <on_crash>restart</on_crash>
++  <devices>
++    <emulator>/usr/bin/qemu</emulator>
++    <disk type='block' device='disk'>
++      <source dev='/dev/HostVG/QEMUGuest1'/>
++      <target dev='hda' bus='ide'/>
++      <address type='drive' controller='0' bus='0' target='0' unit='0'/>
++    </disk>
++    <controller type='usb' index='0'/>
++    <controller type='ide' index='0'/>
++    <controller type='pci' index='0' model='pci-root'/>
++    <serial type='pty'>
++      <target port='0'/>
++    </serial>
++    <console type='pty'>
++      <target type='serial' port='0'/>
++    </console>
++    <input type='tablet' bus='usb'/>
++    <memballoon model='virtio'/>
++  </devices>
++</domain>

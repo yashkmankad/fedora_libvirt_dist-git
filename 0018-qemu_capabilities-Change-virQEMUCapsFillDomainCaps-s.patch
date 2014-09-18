@@ -1,0 +1,192 @@
+From 103a146b669a778238485425f4eb69a5a1f5c747 Mon Sep 17 00:00:00 2001
+From: Michal Privoznik <mprivozn@redhat.com>
+Date: Wed, 17 Sep 2014 11:33:35 +0200
+Subject: [PATCH] qemu_capabilities: Change virQEMUCapsFillDomainCaps signature
+
+Up till now the virQEMUCapsFillDomainCaps() was type of void as
+there was no way for it to fail. This is, however, going to
+change in the next commit.
+
+Signed-off-by: Michal Privoznik <mprivozn@redhat.com>
+(cherry picked from commit 2b2e4a7acff5574dd82bfbd61a638270f6be54ef)
+---
+ src/qemu/qemu_capabilities.c | 25 ++++++++++++++++---------
+ src/qemu/qemu_capabilities.h |  4 ++--
+ src/qemu/qemu_driver.c       |  3 ++-
+ tests/domaincapstest.c       | 19 ++++++++++++-------
+ 4 files changed, 32 insertions(+), 19 deletions(-)
+
+diff --git a/src/qemu/qemu_capabilities.c b/src/qemu/qemu_capabilities.c
+index c999ee4..d2e5f47 100644
+--- a/src/qemu/qemu_capabilities.c
++++ b/src/qemu/qemu_capabilities.c
+@@ -3608,7 +3608,7 @@ virQEMUCapsGetDefaultMachine(virQEMUCapsPtr qemuCaps)
+ }
+ 
+ 
+-static void
++static int
+ virQEMUCapsFillDomainLoaderCaps(virQEMUCapsPtr qemuCaps,
+                                 virDomainCapsLoaderPtr loader,
+                                 virArch arch)
+@@ -3629,10 +3629,11 @@ virQEMUCapsFillDomainLoaderCaps(virQEMUCapsPtr qemuCaps,
+         VIR_DOMAIN_CAPS_ENUM_SET(loader->readonly,
+                                  VIR_TRISTATE_BOOL_YES,
+                                  VIR_TRISTATE_BOOL_NO);
++    return 0;
+ }
+ 
+ 
+-static void
++static int
+ virQEMUCapsFillDomainOSCaps(virQEMUCapsPtr qemuCaps,
+                             virDomainCapsOSPtr os,
+                             virArch arch)
+@@ -3640,11 +3641,13 @@ virQEMUCapsFillDomainOSCaps(virQEMUCapsPtr qemuCaps,
+     virDomainCapsLoaderPtr loader = &os->loader;
+ 
+     os->device.supported = true;
+-    virQEMUCapsFillDomainLoaderCaps(qemuCaps, loader, arch);
++    if (virQEMUCapsFillDomainLoaderCaps(qemuCaps, loader, arch) < 0)
++        return -1;
++    return 0;
+ }
+ 
+ 
+-static void
++static int
+ virQEMUCapsFillDomainDeviceDiskCaps(virQEMUCapsPtr qemuCaps,
+                                     virDomainCapsDeviceDiskPtr disk)
+ {
+@@ -3667,10 +3670,11 @@ virQEMUCapsFillDomainDeviceDiskCaps(virQEMUCapsPtr qemuCaps,
+ 
+     if (virQEMUCapsGet(qemuCaps, QEMU_CAPS_DEVICE_USB_STORAGE))
+         VIR_DOMAIN_CAPS_ENUM_SET(disk->bus, VIR_DOMAIN_DISK_BUS_USB);
++    return 0;
+ }
+ 
+ 
+-static void
++static int
+ virQEMUCapsFillDomainDeviceHostdevCaps(virQEMUCapsPtr qemuCaps,
+                                        virDomainCapsDeviceHostdevPtr hostdev)
+ {
+@@ -3715,10 +3719,11 @@ virQEMUCapsFillDomainDeviceHostdevCaps(virQEMUCapsPtr qemuCaps,
+                                  VIR_DOMAIN_HOSTDEV_PCI_BACKEND_DEFAULT,
+                                  VIR_DOMAIN_HOSTDEV_PCI_BACKEND_KVM);
+     }
++    return 0;
+ }
+ 
+ 
+-void
++int
+ virQEMUCapsFillDomainCaps(virDomainCapsPtr domCaps,
+                           virQEMUCapsPtr qemuCaps)
+ {
+@@ -3729,7 +3734,9 @@ virQEMUCapsFillDomainCaps(virDomainCapsPtr domCaps,
+ 
+     domCaps->maxvcpus = maxvcpus;
+ 
+-    virQEMUCapsFillDomainOSCaps(qemuCaps, os, domCaps->arch);
+-    virQEMUCapsFillDomainDeviceDiskCaps(qemuCaps, disk);
+-    virQEMUCapsFillDomainDeviceHostdevCaps(qemuCaps, hostdev);
++    if (virQEMUCapsFillDomainOSCaps(qemuCaps, os, domCaps->arch) < 0 ||
++        virQEMUCapsFillDomainDeviceDiskCaps(qemuCaps, disk) < 0 ||
++        virQEMUCapsFillDomainDeviceHostdevCaps(qemuCaps, hostdev) < 0)
++        return -1;
++    return 0;
+ }
+diff --git a/src/qemu/qemu_capabilities.h b/src/qemu/qemu_capabilities.h
+index 0980c00..828bba3 100644
+--- a/src/qemu/qemu_capabilities.h
++++ b/src/qemu/qemu_capabilities.h
+@@ -324,7 +324,7 @@ int virQEMUCapsInitGuestFromBinary(virCapsPtr caps,
+                                    virQEMUCapsPtr kvmbinCaps,
+                                    virArch guestarch);
+ 
+-void virQEMUCapsFillDomainCaps(virDomainCapsPtr domCaps,
+-                               virQEMUCapsPtr qemuCaps);
++int virQEMUCapsFillDomainCaps(virDomainCapsPtr domCaps,
++                              virQEMUCapsPtr qemuCaps);
+ 
+ #endif /* __QEMU_CAPABILITIES_H__*/
+diff --git a/src/qemu/qemu_driver.c b/src/qemu/qemu_driver.c
+index 588eba4..9c1644c 100644
+--- a/src/qemu/qemu_driver.c
++++ b/src/qemu/qemu_driver.c
+@@ -17205,7 +17205,8 @@ qemuConnectGetDomainCapabilities(virConnectPtr conn,
+     if (!(domCaps = virDomainCapsNew(emulatorbin, machine, arch, virttype)))
+         goto cleanup;
+ 
+-    virQEMUCapsFillDomainCaps(domCaps, qemuCaps);
++    if (virQEMUCapsFillDomainCaps(domCaps, qemuCaps) < 0)
++        goto cleanup;
+ 
+     ret = virDomainCapsFormat(domCaps);
+  cleanup:
+diff --git a/tests/domaincapstest.c b/tests/domaincapstest.c
+index f240643..0c4b09f 100644
+--- a/tests/domaincapstest.c
++++ b/tests/domaincapstest.c
+@@ -28,13 +28,13 @@
+ 
+ #define VIR_FROM_THIS VIR_FROM_NONE
+ 
+-typedef void (*virDomainCapsFill)(virDomainCapsPtr domCaps,
+-                                  void *opaque);
++typedef int (*virDomainCapsFill)(virDomainCapsPtr domCaps,
++                                 void *opaque);
+ 
+ #define SET_ALL_BITS(x) \
+     memset(&(x.values), 0xff, sizeof(x.values))
+ 
+-static void
++static int
+ fillAll(virDomainCapsPtr domCaps,
+         void *opaque ATTRIBUTE_UNUSED)
+ {
+@@ -60,18 +60,20 @@ fillAll(virDomainCapsPtr domCaps,
+     SET_ALL_BITS(hostdev->subsysType);
+     SET_ALL_BITS(hostdev->capsType);
+     SET_ALL_BITS(hostdev->pciBackend);
++    return 0;
+ }
+ 
+ 
+ #ifdef WITH_QEMU
+ # include "testutilsqemu.h"
+-static void
++static int
+ fillQemuCaps(virDomainCapsPtr domCaps,
+              void *opaque)
+ {
+     virQEMUCapsPtr qemuCaps = (virQEMUCapsPtr) opaque;
+ 
+-    virQEMUCapsFillDomainCaps(domCaps, qemuCaps);
++    if (virQEMUCapsFillDomainCaps(domCaps, qemuCaps) < 0)
++        return -1;
+ 
+     /* The function above tries to query host's KVM & VFIO capabilities by
+      * calling qemuHostdevHostSupportsPassthroughLegacy() and
+@@ -82,6 +84,7 @@ fillQemuCaps(virDomainCapsPtr domCaps,
+                              VIR_DOMAIN_HOSTDEV_PCI_BACKEND_DEFAULT,
+                              VIR_DOMAIN_HOSTDEV_PCI_BACKEND_KVM,
+                              VIR_DOMAIN_HOSTDEV_PCI_BACKEND_VFIO);
++    return 0;
+ }
+ #endif /* WITH_QEMU */
+ 
+@@ -99,8 +102,10 @@ buildVirDomainCaps(const char *emulatorbin,
+     if (!(domCaps = virDomainCapsNew(emulatorbin, machine, arch, type)))
+         goto cleanup;
+ 
+-    if (fillFunc)
+-        fillFunc(domCaps, opaque);
++    if (fillFunc && fillFunc(domCaps, opaque) < 0) {
++        virObjectUnref(domCaps);
++        domCaps = NULL;
++    }
+ 
+  cleanup:
+     return domCaps;

@@ -366,7 +366,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 1.2.8
-Release: 3%{?dist}%{?extra_release}
+Release: 4%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -382,7 +382,6 @@ Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
 Patch0001: 0001-network-try-to-eliminate-default-network-conflict-du.patch
 Patch0002: 0002-network-detect-conflicting-route-even-if-it-is-the-f.patch
 # Fix directory creation at session daemon startup (bz #1139672)
-# (Patch 5 is posted but not in git as of 2014-09-15)
 Patch0003: 0003-rpc-reformat-the-flow-to-make-a-bit-more-sense.patch
 Patch0004: 0004-remove-redundant-pidfile-path-constructions.patch
 Patch0005: 0005-util-fix-potential-leak-in-error-codepath.patch
@@ -393,6 +392,19 @@ Patch0007: 0007-rpc-make-daemon-spawning-a-bit-more-intelligent.patch
 Patch0008: 0008-spec-Don-t-build-wireshark-on-f21-non-upstream.patch
 # Fix preun script (bz #1142367)
 Patch0009: 0009-spec-Fix-preun-script-for-daemon.patch
+# Don't mess up labelling of /dev/net/tun (bz #1141879)
+Patch0010: 0010-virSecuritySELinuxSetTapFDLabel-Temporarily-revert-t.patch
+# pflash/nvram support for UEFI/OVMF
+Patch0011: 0011-conf-Extend-loader-and-introduce-nvram.patch
+Patch0012: 0012-qemu-Implement-extended-loader-and-nvram.patch
+Patch0013: 0013-qemu-Automatically-create-NVRAM-store.patch
+Patch0014: 0014-nvram-Fix-permissions.patch
+Patch0015: 0015-virDomainUndefineFlags-Allow-NVRAM-unlinking.patch
+Patch0016: 0016-formatdomain-Update-loader-example-to-match-the-rest.patch
+Patch0017: 0017-domaincaps-Expose-UEFI-capability.patch
+Patch0018: 0018-qemu_capabilities-Change-virQEMUCapsFillDomainCaps-s.patch
+Patch0019: 0019-domaincaps-Expose-UEFI-binary-path-if-it-exists.patch
+Patch0020: 0020-domaincapstest-Run-cleanly-on-systems-missing-OVMF-f.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -1223,7 +1235,6 @@ driver
 %patch0001 -p1
 %patch0002 -p1
 # Fix directory creation at session daemon startup (bz #1139672)
-# (Patch 5 is posted but not in git as of 2014-09-15)
 %patch0003 -p1
 %patch0004 -p1
 %patch0005 -p1
@@ -1234,6 +1245,19 @@ driver
 %patch0008 -p1
 # Fix preun script (bz #1142367)
 %patch0009 -p1
+# Don't mess up labelling of /dev/net/tun (bz #1141879)
+%patch0010 -p1
+# pflash/nvram support for UEFI/OVMF
+%patch0011 -p1
+%patch0012 -p1
+%patch0013 -p1
+%patch0014 -p1
+%patch0015 -p1
+%patch0016 -p1
+%patch0017 -p1
+%patch0018 -p1
+%patch0019 -p1
+%patch0020 -p1
 
 %build
 %if ! %{with_xen}
@@ -2004,6 +2028,7 @@ exit 0
 %dir %attr(0750, %{qemu_user}, %{qemu_group}) %{_localstatedir}/lib/libvirt/qemu/
 %dir %attr(0750, %{qemu_user}, %{qemu_group}) %{_localstatedir}/lib/libvirt/qemu/channel/
 %dir %attr(0750, %{qemu_user}, %{qemu_group}) %{_localstatedir}/lib/libvirt/qemu/channel/target/
+%dir %attr(0711, %{qemu_user}, %{qemu_group}) %{_localstatedir}/lib/libvirt/qemu/nvram/
 %dir %attr(0750, %{qemu_user}, %{qemu_group}) %{_localstatedir}/cache/libvirt/qemu/
 %{_datadir}/augeas/lenses/libvirtd_qemu.aug
 %{_datadir}/augeas/lenses/tests/test_libvirtd_qemu.aug
@@ -2106,6 +2131,7 @@ exit 0
 %dir %attr(0750, %{qemu_user}, %{qemu_group}) %{_localstatedir}/lib/libvirt/qemu/
 %dir %attr(0750, %{qemu_user}, %{qemu_group}) %{_localstatedir}/lib/libvirt/qemu/channel/
 %dir %attr(0750, %{qemu_user}, %{qemu_group}) %{_localstatedir}/lib/libvirt/qemu/channel/target/
+%dir %attr(0750, %{qemu_user}, %{qemu_group}) %{_localstatedir}/lib/libvirt/qemu/nvram/
 %dir %attr(0750, %{qemu_user}, %{qemu_group}) %{_localstatedir}/cache/libvirt/qemu/
 %{_datadir}/augeas/lenses/libvirtd_qemu.aug
 %{_datadir}/augeas/lenses/tests/test_libvirtd_qemu.aug
@@ -2309,6 +2335,10 @@ exit 0
 %doc examples/systemtap
 
 %changelog
+* Thu Sep 18 2014 Cole Robinson <crobinso@redhat.com> - 1.2.8-4
+- Don't mess up labelling of /dev/net/tun (bz #1141879)
+- pflash/nvram support for UEFI/OVMF
+
 * Wed Sep 17 2014 Cole Robinson <crobinso@redhat.com> - 1.2.8-3
 - Fix preun script (bz #1142367)
 

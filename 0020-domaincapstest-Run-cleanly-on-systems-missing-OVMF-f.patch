@@ -1,0 +1,40 @@
+From 6fcd1ae861279589172783c4937367685469f265 Mon Sep 17 00:00:00 2001
+From: Michal Privoznik <mprivozn@redhat.com>
+Date: Wed, 17 Sep 2014 17:17:03 +0200
+Subject: [PATCH] domaincapstest: Run cleanly on systems missing OVMF firmware
+
+As of f05b6a918e28 the test produces the list of paths that can
+be passed to <loader/> and libvirt knows about them. However,
+during the process of generating the list the paths are checked
+for their presence. This may produce different results on
+different systems.  Therefore, the path - if missing - is
+added to pretend it's there.
+
+Signed-off-by: Michal Privoznik <mprivozn@redhat.com>
+(cherry picked from commit b3f42da6b77644107bcbaf720d7ed9cef5c798a2)
+---
+ tests/domaincapstest.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/tests/domaincapstest.c b/tests/domaincapstest.c
+index 8543963..067ad4d 100644
+--- a/tests/domaincapstest.c
++++ b/tests/domaincapstest.c
+@@ -118,6 +118,17 @@ fillQemuCaps(virDomainCapsPtr domCaps,
+                              VIR_DOMAIN_HOSTDEV_PCI_BACKEND_DEFAULT,
+                              VIR_DOMAIN_HOSTDEV_PCI_BACKEND_KVM,
+                              VIR_DOMAIN_HOSTDEV_PCI_BACKEND_VFIO);
++
++    /* Moreover, as of f05b6a918e28 we are expecting to see
++     * OVMF_CODE.fd file which may not exists everywhere. */
++    if (!domCaps->os.loader.values.nvalues) {
++        virDomainCapsLoaderPtr loader = &domCaps->os.loader;
++
++        if (fillStringValues(&loader->values,
++                             "/usr/share/OVMF/OVMF_CODE.fd",
++                             NULL) < 0)
++            return -1;
++    }
+     return 0;
+ }
+ #endif /* WITH_QEMU */

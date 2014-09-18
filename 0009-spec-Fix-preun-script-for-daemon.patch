@@ -1,4 +1,4 @@
-From 09f0ff32b8925131c058de768751d3368f47a722 Mon Sep 17 00:00:00 2001
+From abb9c206877a937c2a509ec534c190b27c0b0e55 Mon Sep 17 00:00:00 2001
 From: Jiri Denemark <jdenemar@redhat.com>
 Date: Wed, 3 Sep 2014 10:51:14 +0200
 Subject: [PATCH] spec: Fix preun script for daemon
