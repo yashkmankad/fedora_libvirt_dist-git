@@ -1,4 +1,4 @@
-From 103a146b669a778238485425f4eb69a5a1f5c747 Mon Sep 17 00:00:00 2001
+From b9471c6a4ad05bdd7d5a3e69da357fb5ced0d704 Mon Sep 17 00:00:00 2001
 From: Michal Privoznik <mprivozn@redhat.com>
 Date: Wed, 17 Sep 2014 11:33:35 +0200
 Subject: [PATCH] qemu_capabilities: Change virQEMUCapsFillDomainCaps signature

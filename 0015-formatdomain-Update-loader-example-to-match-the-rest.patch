@@ -1,4 +1,4 @@
-From 2b30f114b796aee6f92eb13244f8cd42ef523bfe Mon Sep 17 00:00:00 2001
+From ebc6db93895fdba68f53dc22308ada6d31f7b3b9 Mon Sep 17 00:00:00 2001
 From: Michal Privoznik <mprivozn@redhat.com>
 Date: Fri, 12 Sep 2014 13:18:32 +0200
 Subject: [PATCH] formatdomain: Update <loader/> example to match the rest

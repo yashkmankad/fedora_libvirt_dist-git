@@ -1,4 +1,4 @@
-From ac0859aae7162255848effdc560368266845dfce Mon Sep 17 00:00:00 2001
+From b1a7618b73c8463dba00e6afe252b6c05fa3d89c Mon Sep 17 00:00:00 2001
 From: Michal Privoznik <mprivozn@redhat.com>
 Date: Thu, 7 Aug 2014 13:50:00 +0200
 Subject: [PATCH] qemu: Implement extended loader and nvram

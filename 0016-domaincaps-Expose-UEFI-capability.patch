@@ -1,4 +1,4 @@
-From 2c4e9da2b46d55fda49b20ae48dbdd4e63209565 Mon Sep 17 00:00:00 2001
+From e26c0cd7a5519390374ccd05e4b2291c7094f837 Mon Sep 17 00:00:00 2001
 From: Michal Privoznik <mprivozn@redhat.com>
 Date: Tue, 16 Sep 2014 14:47:47 +0200
 Subject: [PATCH] domaincaps: Expose UEFI capability

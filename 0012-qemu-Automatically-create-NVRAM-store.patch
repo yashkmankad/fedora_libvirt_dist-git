@@ -1,4 +1,4 @@
-From e2354416fdccb9649f080cdf912c5dc16d0eb578 Mon Sep 17 00:00:00 2001
+From 97273d08a8a82137f627303cefaabcacdf2acc6b Mon Sep 17 00:00:00 2001
 From: Michal Privoznik <mprivozn@redhat.com>
 Date: Thu, 7 Aug 2014 16:59:21 +0200
 Subject: [PATCH] qemu: Automatically create NVRAM store
@@ -87,10 +87,10 @@ index 5d9c21c..6ae940a 100644
          </optional>
          <optional>
 diff --git a/libvirt.spec.in b/libvirt.spec.in
-index 6129f00..935b8c8 100644
+index f408c64..f99de39 100644
 --- a/libvirt.spec.in
 +++ b/libvirt.spec.in
-@@ -1970,6 +1970,7 @@ exit 0
+@@ -1967,6 +1967,7 @@ exit 0
  %dir %attr(0750, %{qemu_user}, %{qemu_group}) %{_localstatedir}/lib/libvirt/qemu/
  %dir %attr(0750, %{qemu_user}, %{qemu_group}) %{_localstatedir}/lib/libvirt/qemu/channel/
  %dir %attr(0750, %{qemu_user}, %{qemu_group}) %{_localstatedir}/lib/libvirt/qemu/channel/target/
@@ -98,7 +98,7 @@ index 6129f00..935b8c8 100644
  %dir %attr(0750, %{qemu_user}, %{qemu_group}) %{_localstatedir}/cache/libvirt/qemu/
  %{_datadir}/augeas/lenses/libvirtd_qemu.aug
  %{_datadir}/augeas/lenses/tests/test_libvirtd_qemu.aug
-@@ -2072,6 +2073,7 @@ exit 0
+@@ -2069,6 +2070,7 @@ exit 0
  %dir %attr(0750, %{qemu_user}, %{qemu_group}) %{_localstatedir}/lib/libvirt/qemu/
  %dir %attr(0750, %{qemu_user}, %{qemu_group}) %{_localstatedir}/lib/libvirt/qemu/channel/
  %dir %attr(0750, %{qemu_user}, %{qemu_group}) %{_localstatedir}/lib/libvirt/qemu/channel/target/

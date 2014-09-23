@@ -1,4 +1,4 @@
-From 884ef00a28244b34d66ada97c8ddd3e7d7ea8ff1 Mon Sep 17 00:00:00 2001
+From cbbccd865f4c3f630e89b4270a036bfb3f76041b Mon Sep 17 00:00:00 2001
 From: Michal Privoznik <mprivozn@redhat.com>
 Date: Thu, 11 Sep 2014 12:09:04 +0200
 Subject: [PATCH] nvram: Fix permissions
@@ -22,10 +22,10 @@ Signed-off-by: Michal Privoznik <mprivozn@redhat.com>
  2 files changed, 5 insertions(+), 2 deletions(-)
 
 diff --git a/libvirt.spec.in b/libvirt.spec.in
-index 935b8c8..3cd7b2e 100644
+index f99de39..32e51f7 100644
 --- a/libvirt.spec.in
 +++ b/libvirt.spec.in
-@@ -1970,7 +1970,7 @@ exit 0
+@@ -1967,7 +1967,7 @@ exit 0
  %dir %attr(0750, %{qemu_user}, %{qemu_group}) %{_localstatedir}/lib/libvirt/qemu/
  %dir %attr(0750, %{qemu_user}, %{qemu_group}) %{_localstatedir}/lib/libvirt/qemu/channel/
  %dir %attr(0750, %{qemu_user}, %{qemu_group}) %{_localstatedir}/lib/libvirt/qemu/channel/target/

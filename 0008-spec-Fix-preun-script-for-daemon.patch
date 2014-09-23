@@ -1,4 +1,4 @@
-From abb9c206877a937c2a509ec534c190b27c0b0e55 Mon Sep 17 00:00:00 2001
+From 3dfb3db2950f57f2a2e0330cd480d7880d314729 Mon Sep 17 00:00:00 2001
 From: Jiri Denemark <jdenemar@redhat.com>
 Date: Wed, 3 Sep 2014 10:51:14 +0200
 Subject: [PATCH] spec: Fix preun script for daemon
@@ -14,10 +14,10 @@ Signed-off-by: Jiri Denemark <jdenemar@redhat.com>
  1 file changed, 1 insertion(+), 5 deletions(-)
 
 diff --git a/libvirt.spec.in b/libvirt.spec.in
-index 7d8748d..6129f00 100644
+index 0741c73..f408c64 100644
 --- a/libvirt.spec.in
 +++ b/libvirt.spec.in
-@@ -1680,11 +1680,7 @@ fi
+@@ -1677,11 +1677,7 @@ fi
  %preun daemon
      %if %{with_systemd}
          %if %{with_systemd_macros}

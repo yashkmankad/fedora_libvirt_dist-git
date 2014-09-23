@@ -1,4 +1,4 @@
-From 589e1c627bcfe2d8f26c6cb9ea0c68e9b902a931 Mon Sep 17 00:00:00 2001
+From 56225e3b45987f782ffe50986b4aa86b9b3ca461 Mon Sep 17 00:00:00 2001
 From: Michal Privoznik <mprivozn@redhat.com>
 Date: Wed, 6 Aug 2014 13:18:53 +0200
 Subject: [PATCH] conf: Extend <loader/> and introduce <nvram/>

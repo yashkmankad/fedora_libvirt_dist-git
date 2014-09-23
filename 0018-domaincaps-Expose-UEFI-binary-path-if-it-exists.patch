@@ -1,4 +1,4 @@
-From 64041dc7d34d7af3fd611d194bf2ab56729a13fa Mon Sep 17 00:00:00 2001
+From 38b252f86889ef48c5fbc4cc66abc03fce681ce5 Mon Sep 17 00:00:00 2001
 From: Michal Privoznik <mprivozn@redhat.com>
 Date: Tue, 16 Sep 2014 19:52:54 -0400
 Subject: [PATCH] domaincaps: Expose UEFI binary path, if it exists

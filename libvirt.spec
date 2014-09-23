@@ -267,9 +267,6 @@
 %if 0%{?fedora} >= 21
     %define with_wireshark 0%{!?_without_wireshark:1}
 %endif
-# Except this is presently busted on F21/rawhide with wireshark 1.12.0
-# https://bugzilla.redhat.com/show_bug.cgi?id=1129419
-%define with_wireshark 0
 
 # Disable some drivers when building without libvirt daemon.
 # The logic is the same as in configure.ac
@@ -366,7 +363,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 1.2.8
-Release: 4%{?dist}%{?extra_release}
+Release: 5%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -387,24 +384,26 @@ Patch0004: 0004-remove-redundant-pidfile-path-constructions.patch
 Patch0005: 0005-util-fix-potential-leak-in-error-codepath.patch
 Patch0006: 0006-util-get-rid-of-unnecessary-umask-call.patch
 Patch0007: 0007-rpc-make-daemon-spawning-a-bit-more-intelligent.patch
-# Disable wireshark building, currently broken on f21/rawhide
-# Nonupstream patch
-Patch0008: 0008-spec-Don-t-build-wireshark-on-f21-non-upstream.patch
 # Fix preun script (bz #1142367)
-Patch0009: 0009-spec-Fix-preun-script-for-daemon.patch
+Patch0008: 0008-spec-Fix-preun-script-for-daemon.patch
 # Don't mess up labelling of /dev/net/tun (bz #1141879)
-Patch0010: 0010-virSecuritySELinuxSetTapFDLabel-Temporarily-revert-t.patch
+Patch0009: 0009-virSecuritySELinuxSetTapFDLabel-Temporarily-revert-t.patch
 # pflash/nvram support for UEFI/OVMF
-Patch0011: 0011-conf-Extend-loader-and-introduce-nvram.patch
-Patch0012: 0012-qemu-Implement-extended-loader-and-nvram.patch
-Patch0013: 0013-qemu-Automatically-create-NVRAM-store.patch
-Patch0014: 0014-nvram-Fix-permissions.patch
-Patch0015: 0015-virDomainUndefineFlags-Allow-NVRAM-unlinking.patch
-Patch0016: 0016-formatdomain-Update-loader-example-to-match-the-rest.patch
-Patch0017: 0017-domaincaps-Expose-UEFI-capability.patch
-Patch0018: 0018-qemu_capabilities-Change-virQEMUCapsFillDomainCaps-s.patch
-Patch0019: 0019-domaincaps-Expose-UEFI-binary-path-if-it-exists.patch
-Patch0020: 0020-domaincapstest-Run-cleanly-on-systems-missing-OVMF-f.patch
+Patch0010: 0010-conf-Extend-loader-and-introduce-nvram.patch
+Patch0011: 0011-qemu-Implement-extended-loader-and-nvram.patch
+Patch0012: 0012-qemu-Automatically-create-NVRAM-store.patch
+Patch0013: 0013-nvram-Fix-permissions.patch
+Patch0014: 0014-virDomainUndefineFlags-Allow-NVRAM-unlinking.patch
+Patch0015: 0015-formatdomain-Update-loader-example-to-match-the-rest.patch
+Patch0016: 0016-domaincaps-Expose-UEFI-capability.patch
+Patch0017: 0017-qemu_capabilities-Change-virQEMUCapsFillDomainCaps-s.patch
+Patch0018: 0018-domaincaps-Expose-UEFI-binary-path-if-it-exists.patch
+Patch0019: 0019-domaincapstest-Run-cleanly-on-systems-missing-OVMF-f.patch
+Patch0020: 0020-spec-Re-run-autotools-for-ovmf-patches.patch
+
+# Fix specifying CPU for qemu aarch64
+Patch0101: 0101-qemu_command-Split-qemuBuildCpuArgStr.patch
+Patch0102: 0102-qemu-Don-t-compare-CPU-against-host-for-TCG.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -1240,14 +1239,12 @@ driver
 %patch0005 -p1
 %patch0006 -p1
 %patch0007 -p1
-# Disable wireshark building, currently broken on f21/rawhide
-# Nonupstream patch
-%patch0008 -p1
 # Fix preun script (bz #1142367)
-%patch0009 -p1
+%patch0008 -p1
 # Don't mess up labelling of /dev/net/tun (bz #1141879)
-%patch0010 -p1
+%patch0009 -p1
 # pflash/nvram support for UEFI/OVMF
+%patch0010 -p1
 %patch0011 -p1
 %patch0012 -p1
 %patch0013 -p1
@@ -1258,6 +1255,10 @@ driver
 %patch0018 -p1
 %patch0019 -p1
 %patch0020 -p1
+
+# Fix specifying CPU for qemu aarch64
+%patch0101 -p1
+%patch0102 -p1
 
 %build
 %if ! %{with_xen}
@@ -2335,6 +2336,9 @@ exit 0
 %doc examples/systemtap
 
 %changelog
+* Tue Sep 23 2014 Cole Robinson <crobinso@redhat.com> - 1.2.8-5
+- Fix specifying CPU for qemu aarch64
+
 * Thu Sep 18 2014 Cole Robinson <crobinso@redhat.com> - 1.2.8-4
 - Don't mess up labelling of /dev/net/tun (bz #1141879)
 - pflash/nvram support for UEFI/OVMF

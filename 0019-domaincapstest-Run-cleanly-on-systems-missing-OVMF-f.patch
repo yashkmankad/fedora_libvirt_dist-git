@@ -1,4 +1,4 @@
-From 6fcd1ae861279589172783c4937367685469f265 Mon Sep 17 00:00:00 2001
+From 82354e136a056fbadb77b0a11705fd2b9e803a3a Mon Sep 17 00:00:00 2001
 From: Michal Privoznik <mprivozn@redhat.com>
 Date: Wed, 17 Sep 2014 17:17:03 +0200
 Subject: [PATCH] domaincapstest: Run cleanly on systems missing OVMF firmware

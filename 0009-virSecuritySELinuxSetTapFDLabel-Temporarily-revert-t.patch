@@ -1,4 +1,4 @@
-From c414cb524bdbc3555a5332fe75b40f8cf3ded0f4 Mon Sep 17 00:00:00 2001
+From 3c75dc1ed9a32fff16c84f60536ee21ff8e9e19f Mon Sep 17 00:00:00 2001
 From: Michal Privoznik <mprivozn@redhat.com>
 Date: Thu, 18 Sep 2014 15:17:29 +0200
 Subject: [PATCH] virSecuritySELinuxSetTapFDLabel: Temporarily revert to old

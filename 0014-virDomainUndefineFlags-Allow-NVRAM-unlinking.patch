@@ -1,4 +1,4 @@
-From 03c156e5d54b311291101ca21690b586222be276 Mon Sep 17 00:00:00 2001
+From 7da89c42f92a7ce7430908ab08ea3b380306b603 Mon Sep 17 00:00:00 2001
 From: Michal Privoznik <mprivozn@redhat.com>
 Date: Thu, 11 Sep 2014 13:17:11 +0200
 Subject: [PATCH] virDomainUndefineFlags: Allow NVRAM unlinking
