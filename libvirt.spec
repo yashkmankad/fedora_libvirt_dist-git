@@ -363,7 +363,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 1.2.8
-Release: 5%{?dist}%{?extra_release}
+Release: 6%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -404,6 +404,8 @@ Patch0020: 0020-spec-Re-run-autotools-for-ovmf-patches.patch
 # Fix specifying CPU for qemu aarch64
 Patch0101: 0101-qemu_command-Split-qemuBuildCpuArgStr.patch
 Patch0102: 0102-qemu-Don-t-compare-CPU-against-host-for-TCG.patch
+# Fix labelling host devices (bz #1145968)
+Patch0103: 0103-security-Fix-labelling-host-devices-bz-1145968.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -1259,6 +1261,8 @@ driver
 # Fix specifying CPU for qemu aarch64
 %patch0101 -p1
 %patch0102 -p1
+# Fix labelling host devices (bz #1145968)
+%patch0103 -p1
 
 %build
 %if ! %{with_xen}
@@ -2336,6 +2340,9 @@ exit 0
 %doc examples/systemtap
 
 %changelog
+* Wed Sep 24 2014 Cole Robinson <crobinso@redhat.com> - 1.2.8-6
+- Fix labelling host devices (bz #1145968)
+
 * Tue Sep 23 2014 Cole Robinson <crobinso@redhat.com> - 1.2.8-5
 - Fix specifying CPU for qemu aarch64
 
