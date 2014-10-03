@@ -363,7 +363,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 1.2.9
-Release: 1%{?dist}%{?extra_release}
+Release: 2%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -373,6 +373,10 @@ URL: http://libvirt.org/
     %define mainturl stable_updates/
 %endif
 Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
+
+# Fix specifying CPU for qemu aarch64
+Patch0001: 0001-qemu_command-Split-qemuBuildCpuArgStr.patch
+Patch0002: 0002-qemu-Don-t-compare-CPU-against-host-for-TCG.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -1197,6 +1201,10 @@ driver
 
 %prep
 %setup -q
+
+# Fix specifying CPU for qemu aarch64
+%patch0001 -p1
+%patch0002 -p1
 
 %build
 %if ! %{with_xen}
@@ -2274,6 +2282,9 @@ exit 0
 %doc examples/systemtap
 
 %changelog
+* Fri Oct 03 2014 Cole Robinson <crobinso@redhat.com> - 1.2.9-2
+- Fix specifying CPU for qemu aarch64
+
 * Wed Sep 24 2014 Cole Robinson <crobinso@redhat.com> - 1.2.8-6
 - Fix labelling host devices (bz #1145968)
 
