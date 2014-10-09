@@ -363,7 +363,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 1.2.9
-Release: 2%{?dist}%{?extra_release}
+Release: 3%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -377,6 +377,8 @@ Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
 # Fix specifying CPU for qemu aarch64
 Patch0001: 0001-qemu_command-Split-qemuBuildCpuArgStr.patch
 Patch0002: 0002-qemu-Don-t-compare-CPU-against-host-for-TCG.patch
+# Fix selinux errors with /dev/net/tun (bz #1147057)
+Patch0003: 0003-security_selinux-Don-t-relabel-dev-net-tun.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -1205,6 +1207,8 @@ driver
 # Fix specifying CPU for qemu aarch64
 %patch0001 -p1
 %patch0002 -p1
+# Fix selinux errors with /dev/net/tun (bz #1147057)
+%patch0003 -p1
 
 %build
 %if ! %{with_xen}
@@ -2282,6 +2286,9 @@ exit 0
 %doc examples/systemtap
 
 %changelog
+* Thu Oct 09 2014 Cole Robinson <crobinso@redhat.com> - 1.2.9-3
+- Fix selinux errors with /dev/net/tun (bz #1147057)
+
 * Fri Oct 03 2014 Cole Robinson <crobinso@redhat.com> - 1.2.9-2
 - Fix specifying CPU for qemu aarch64
 

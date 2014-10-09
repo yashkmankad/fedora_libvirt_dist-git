@@ -1,4 +1,4 @@
-From fe13df3feab361cd7596e67af87ad1ca2c4158c5 Mon Sep 17 00:00:00 2001
+From bbdbfbfc03494f5cbba4ee869149cca37c1fd53c Mon Sep 17 00:00:00 2001
 From: Cole Robinson <crobinso@redhat.com>
 Date: Tue, 23 Sep 2014 13:07:09 -0400
 Subject: [PATCH] qemu: Don't compare CPU against host for TCG
@@ -53,10 +53,10 @@ correctly.
  25 files changed, 90 insertions(+), 69 deletions(-)
 
 diff --git a/src/qemu/qemu_command.c b/src/qemu/qemu_command.c
-index 96ba081..a3bcab9 100644
+index db5ea35..cd34445 100644
 --- a/src/qemu/qemu_command.c
 +++ b/src/qemu/qemu_command.c
-@@ -6072,6 +6072,8 @@ qemuBuildCpuModelArgStr(virQEMUDriverPtr driver,
+@@ -6160,6 +6160,8 @@ qemuBuildCpuModelArgStr(virQEMUDriverPtr driver,
      virCPUCompareResult cmp;
      const char *preferred;
      virCapsPtr caps = NULL;
@@ -65,7 +65,7 @@ index 96ba081..a3bcab9 100644
  
      if (!(caps = virQEMUDriverGetCapabilities(driver, false)))
          goto cleanup;
-@@ -6094,30 +6096,33 @@ qemuBuildCpuModelArgStr(virQEMUDriverPtr driver,
+@@ -6182,30 +6184,33 @@ qemuBuildCpuModelArgStr(virQEMUDriverPtr driver,
          cpuUpdate(cpu, host) < 0)
          goto cleanup;
  
@@ -117,7 +117,7 @@ index 96ba081..a3bcab9 100644
          int hasSVM = cpuHasFeature(data, "svm");
          if (hasSVM < 0)
              goto cleanup;
-@@ -6145,16 +6150,23 @@ qemuBuildCpuModelArgStr(virQEMUDriverPtr driver,
+@@ -6233,16 +6238,23 @@ qemuBuildCpuModelArgStr(virQEMUDriverPtr driver,
          if (VIR_STRDUP(guest->vendor_id, cpu->vendor_id) < 0)
              goto cleanup;
  
@@ -150,7 +150,7 @@ index 96ba081..a3bcab9 100644
  
          virBufferAdd(buf, guest->model, -1);
          if (guest->vendor_id)
-@@ -6171,7 +6183,7 @@ qemuBuildCpuModelArgStr(virQEMUDriverPtr driver,
+@@ -6259,7 +6271,7 @@ qemuBuildCpuModelArgStr(virQEMUDriverPtr driver,
      }
  
      ret = 0;
@@ -470,10 +470,10 @@ index 1e09680..9927294 100644
  -mon chardev=charmonitor,id=monitor,mode=readline -no-acpi -boot c -usb \
  -chardev pty,id=charserial0 \
 diff --git a/tests/qemuxml2argvtest.c b/tests/qemuxml2argvtest.c
-index 3feb2fe..e649aa5 100644
+index b380fd8..483ca90 100644
 --- a/tests/qemuxml2argvtest.c
 +++ b/tests/qemuxml2argvtest.c
-@@ -920,7 +920,7 @@ mymain(void)
+@@ -933,7 +933,7 @@ mymain(void)
              QEMU_CAPS_DEVICE, QEMU_CAPS_SPICE,
              QEMU_CAPS_DEVICE_QXL);
      DO_TEST("graphics-spice-timeout",
@@ -482,7 +482,7 @@ index 3feb2fe..e649aa5 100644
              QEMU_CAPS_VGA, QEMU_CAPS_VGA_QXL,
              QEMU_CAPS_DEVICE, QEMU_CAPS_SPICE,
              QEMU_CAPS_DEVICE_QXL_VGA);
-@@ -1192,14 +1192,14 @@ mymain(void)
+@@ -1208,14 +1208,14 @@ mymain(void)
      DO_TEST("cpu-topology1", QEMU_CAPS_SMP_TOPOLOGY);
      DO_TEST("cpu-topology2", QEMU_CAPS_SMP_TOPOLOGY);
      DO_TEST("cpu-topology3", NONE);
@@ -505,7 +505,7 @@ index 3feb2fe..e649aa5 100644
      DO_TEST("cpu-numa1", NONE);
      DO_TEST("cpu-numa2", QEMU_CAPS_SMP_TOPOLOGY);
      DO_TEST_PARSE_ERROR("cpu-numa3", NONE);
-@@ -1284,7 +1284,8 @@ mymain(void)
+@@ -1303,7 +1303,8 @@ mymain(void)
      DO_TEST("pseries-usb-kbd", QEMU_CAPS_PCI_OHCI,
              QEMU_CAPS_DEVICE_USB_KBD, QEMU_CAPS_CHARDEV,
              QEMU_CAPS_DEVICE, QEMU_CAPS_NODEFCONFIG);

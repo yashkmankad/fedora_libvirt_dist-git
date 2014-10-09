@@ -1,4 +1,4 @@
-From e543e857120b8a1b352bf34fd8a983e95ea70487 Mon Sep 17 00:00:00 2001
+From 96a7f7fa1953707e1eb9f0f638baf213507a5cb2 Mon Sep 17 00:00:00 2001
 From: Cole Robinson <crobinso@redhat.com>
 Date: Tue, 23 Sep 2014 11:35:57 -0400
 Subject: [PATCH] qemu_command: Split qemuBuildCpuArgStr
@@ -12,10 +12,10 @@ code movement and re-indentation.
  1 file changed, 122 insertions(+), 104 deletions(-)
 
 diff --git a/src/qemu/qemu_command.c b/src/qemu/qemu_command.c
-index 2184caa..96ba081 100644
+index eb72451..db5ea35 100644
 --- a/src/qemu/qemu_command.c
 +++ b/src/qemu/qemu_command.c
-@@ -6052,139 +6052,162 @@ qemuBuildClockArgStr(virDomainClockDefPtr def)
+@@ -6140,139 +6140,162 @@ qemuBuildClockArgStr(virDomainClockDefPtr def)
      return NULL;
  }
  
@@ -277,7 +277,7 @@ index 2184caa..96ba081 100644
          have_cpu = true;
      } else {
          /*
-@@ -6309,11 +6332,6 @@ qemuBuildCpuArgStr(virQEMUDriverPtr driver,
+@@ -6398,11 +6421,6 @@ qemuBuildCpuArgStr(virQEMUDriverPtr driver,
      ret = 0;
  
   cleanup:
