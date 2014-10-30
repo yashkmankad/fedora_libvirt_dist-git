@@ -363,7 +363,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 1.2.9
-Release: 3%{?dist}%{?extra_release}
+Release: 4%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -379,6 +379,10 @@ Patch0001: 0001-qemu_command-Split-qemuBuildCpuArgStr.patch
 Patch0002: 0002-qemu-Don-t-compare-CPU-against-host-for-TCG.patch
 # Fix selinux errors with /dev/net/tun (bz #1147057)
 Patch0003: 0003-security_selinux-Don-t-relabel-dev-net-tun.patch
+# Fix creating i686 guest with x86_64 emulator (bz #1153797)
+Patch0004: 0004-qemu-x86_64-is-good-enough-for-i686.patch
+# Fix tests with latest libxml2
+Patch0005: 0005-util-Prepare-URI-formatting-for-libxml2-2.9.2.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -1209,6 +1213,10 @@ driver
 %patch0002 -p1
 # Fix selinux errors with /dev/net/tun (bz #1147057)
 %patch0003 -p1
+# Fix creating i686 guest with x86_64 emulator (bz #1153797)
+%patch0004 -p1
+# Fix tests with latest libxml2
+%patch0005 -p1
 
 %build
 %if ! %{with_xen}
@@ -2286,6 +2294,10 @@ exit 0
 %doc examples/systemtap
 
 %changelog
+* Thu Oct 30 2014 Cole Robinson <crobinso@redhat.com> - 1.2.9-4
+- Fix creating i686 guest with x86_64 emulator (bz #1153797)
+- Fix tests with latest libxml2
+
 * Thu Oct 09 2014 Cole Robinson <crobinso@redhat.com> - 1.2.9-3
 - Fix selinux errors with /dev/net/tun (bz #1147057)
 
