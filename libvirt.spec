@@ -363,7 +363,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 1.2.10
-Release: 1%{?dist}%{?extra_release}
+Release: 2%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -373,6 +373,15 @@ URL: http://libvirt.org/
     %define mainturl stable_updates/
 %endif
 Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
+
+# Fix caps probing when KVM is disabled (bz #1160318)
+Patch0001: 0001-qemu-Don-t-try-to-parse-help-for-new-QEMU.patch
+# ppc64le fixes (bz #1163439)
+Patch0002: 0002-Cpu-Add-support-for-Power-LE-Architecture.patch
+Patch0003: 0003-PowerPC-Add-support-for-launching-VM-in-compat-mode.patch
+Patch0004: 0004-PowerPC-Improve-PVR-handling-to-fall-back-to-cpu-gen.patch
+Patch0005: 0005-docs-Add-documentation-for-compat-mode.patch
+Patch0006: 0006-Test-Add-a-testcase-for-PowerPC-compat-mode-cpu-spec.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -1197,6 +1206,15 @@ driver
 
 %prep
 %setup -q
+
+# Fix caps probing when KVM is disabled (bz #1160318)
+%patch0001 -p1
+# ppc64le fixes (bz #1163439)
+%patch0002 -p1
+%patch0003 -p1
+%patch0004 -p1
+%patch0005 -p1
+%patch0006 -p1
 
 %build
 %if ! %{with_xen}
@@ -2285,6 +2303,10 @@ exit 0
 %doc examples/systemtap
 
 %changelog
+* Sat Nov 15 2014 Cole Robinson <crobinso@redhat.com> - 1.2.10-2
+- Fix caps probing when KVM is disabled (bz #1160318)
+- ppc64le fixes (bz #1163439)
+
 * Mon Nov  3 2014 Daniel Veillard <veillard@redhat.com> - 1.2.10
 - upstream release
 
