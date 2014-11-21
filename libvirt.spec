@@ -363,7 +363,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 1.2.10
-Release: 2%{?dist}%{?extra_release}
+Release: 3%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -382,6 +382,9 @@ Patch0003: 0003-PowerPC-Add-support-for-launching-VM-in-compat-mode.patch
 Patch0004: 0004-PowerPC-Improve-PVR-handling-to-fall-back-to-cpu-gen.patch
 Patch0005: 0005-docs-Add-documentation-for-compat-mode.patch
 Patch0006: 0006-Test-Add-a-testcase-for-PowerPC-compat-mode-cpu-spec.patch
+# Allow arm/aarch64 with UEFI
+Patch0007: 0007-qemu-Support-OVMF-on-armv7l-aarch64-guests.patch
+Patch0008: 0008-qemu-Drop-OVMF-whitelist.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -1215,6 +1218,9 @@ driver
 %patch0004 -p1
 %patch0005 -p1
 %patch0006 -p1
+# Allow arm/aarch64 with UEFI
+%patch0007 -p1
+%patch0008 -p1
 
 %build
 %if ! %{with_xen}
@@ -2303,6 +2309,9 @@ exit 0
 %doc examples/systemtap
 
 %changelog
+* Fri Nov 21 2014 Cole Robinson <crobinso@redhat.com> - 1.2.10-3
+- Allow arm/aarch64 with UEFI
+
 * Sat Nov 15 2014 Cole Robinson <crobinso@redhat.com> - 1.2.10-2
 - Fix caps probing when KVM is disabled (bz #1160318)
 - ppc64le fixes (bz #1163439)
