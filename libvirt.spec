@@ -364,7 +364,7 @@
 
 Summary: Library providing a simple virtualization API
 Name: libvirt
-Version: 1.2.11
+Version: 1.2.12
 Release: 1%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
@@ -2281,6 +2281,9 @@ exit 0
 %doc examples/systemtap
 
 %changelog
+* Tue Jan 27 2015 Daniel P. Berrange <berrange@redhat.com> - 1.2.12-1
+- Update to 1.2.12 release
+
 * Mon Dec 15 2014 Daniel P. Berrange <berrange@redhat.com> - 1.2.11-1
 - Update to 1.2.11 release
 - Use git to apply patches
