@@ -364,8 +364,8 @@
 
 Summary: Library providing a simple virtualization API
 Name: libvirt
-Version: 1.2.12
-Release: 2%{?dist}%{?extra_release}
+Version: 1.2.13
+Release: 1%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -2117,8 +2117,6 @@ exit 0
 %files daemon-driver-vbox
 %defattr(-, root, root)
 %{_libdir}/%{name}/connection-driver/libvirt_driver_vbox.so
-%{_libdir}/%{name}/connection-driver/libvirt_driver_vbox_network.so
-%{_libdir}/%{name}/connection-driver/libvirt_driver_vbox_storage.so
         %endif
     %endif # %{with_driver_modules}
 
@@ -2281,6 +2279,11 @@ exit 0
 %doc examples/systemtap
 
 %changelog
+* Mon Mar 02 2015 Cole Robinson <crobinso@redhat.com> - 1.2.13-1
+- Rebased to version 1.2.13
+- lot of improvements around NUMA code
+- a lot of improvement and bug fixes
+
 * Tue Feb  3 2015 Daniel P. Berrange <berrange@redhat.com> - 1.2.12-2
 - Rebuild for changed xen soname
 
