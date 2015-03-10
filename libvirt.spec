@@ -365,7 +365,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 1.2.13
-Release: 1%{?dist}%{?extra_release}
+Release: 2%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -375,6 +375,9 @@ URL: http://libvirt.org/
     %define mainturl stable_updates/
 %endif
 Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
+
+# Fix connecting to qemu:///session (bz #1198244)
+Patch0001: 0001-qemu-don-t-fill-in-nicindexes-for-session-mode-libvi.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -2279,6 +2282,9 @@ exit 0
 %doc examples/systemtap
 
 %changelog
+* Tue Mar 10 2015 Cole Robinson <crobinso@redhat.com> - 1.2.13-2
+- Fix connecting to qemu:///session (bz #1198244)
+
 * Mon Mar 02 2015 Cole Robinson <crobinso@redhat.com> - 1.2.13-1
 - Rebased to version 1.2.13
 - lot of improvements around NUMA code
