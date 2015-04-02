@@ -108,7 +108,7 @@
 %define with_storage_iscsi    0%{!?_without_storage_iscsi:%{server_drivers}}
 %define with_storage_disk     0%{!?_without_storage_disk:%{server_drivers}}
 %define with_storage_mpath    0%{!?_without_storage_mpath:%{server_drivers}}
-%if 0%{?fedora} >= 16
+%if 0%{?fedora} >= 16 || 0%{?rhel} >= 7
     %define with_storage_rbd      0%{!?_without_storage_rbd:%{server_drivers}}
 %else
     %define with_storage_rbd      0
@@ -179,6 +179,13 @@
 %ifnarch x86_64
     %if 0%{?rhel} >= 6
         %define with_storage_gluster 0
+    %endif
+%endif
+
+# librados and librbd are built only on x86_64 on rhel
+%ifnarch x86_64
+    %if 0%{?rhel} >= 7
+        %define with_storage_rbd 0
     %endif
 %endif
 
@@ -364,8 +371,8 @@
 
 Summary: Library providing a simple virtualization API
 Name: libvirt
-Version: 1.2.13
-Release: 2%{?dist}%{?extra_release}
+Version: 1.2.14
+Release: 1%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -375,9 +382,6 @@ URL: http://libvirt.org/
     %define mainturl stable_updates/
 %endif
 Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
-
-# Fix connecting to qemu:///session (bz #1198244)
-Patch0001: 0001-qemu-don-t-fill-in-nicindexes-for-session-mode-libvi.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -569,7 +573,12 @@ BuildRequires: device-mapper-devel
     %endif
 %endif
 %if %{with_storage_rbd}
+    %if 0%{?rhel} >= 7
+BuildRequires: librados2-devel
+BuildRequires: librbd1-devel
+    %else
 BuildRequires: ceph-devel
+    %endif
 %endif
 %if %{with_storage_gluster}
     %if 0%{?rhel} >= 6
@@ -2282,6 +2291,9 @@ exit 0
 %doc examples/systemtap
 
 %changelog
+* Thu Apr 02 2015 Cole Robinson <crobinso@redhat.com> - 1.2.14-1
+- Rebased to version 1.2.14
+
 * Tue Mar 10 2015 Cole Robinson <crobinso@redhat.com> - 1.2.13-2
 - Fix connecting to qemu:///session (bz #1198244)
 
