@@ -1,0 +1,155 @@
+From: =?UTF-8?q?J=C3=A1n=20Tomko?= <jtomko@redhat.com>
+Date: Tue, 14 Apr 2015 12:30:16 +0200
+Subject: [PATCH] Add functions dealing with control characters in strings
+
+Add virStringHasControlChars that checks if the string has
+any control characters other than \t\r\n,
+and virStringStripControlChars that removes them in-place.
+
+(cherry picked from commit 2a530a3e50d9314950cff0a5790c81910b0750a9)
+---
+ src/libvirt_private.syms |  2 ++
+ src/util/virstring.c     | 42 ++++++++++++++++++++++++++++++++++++++++++
+ src/util/virstring.h     |  2 ++
+ tests/virstringtest.c    | 39 +++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 85 insertions(+)
+
+diff --git a/src/libvirt_private.syms b/src/libvirt_private.syms
+index 5716ece..21b6aa5 100644
+--- a/src/libvirt_private.syms
++++ b/src/libvirt_private.syms
+@@ -2121,6 +2121,7 @@ virStrdup;
+ virStringArrayHasString;
+ virStringFreeList;
+ virStringFreeListCount;
++virStringHasControlChars;
+ virStringIsEmpty;
+ virStringJoin;
+ virStringListLength;
+@@ -2130,6 +2131,7 @@ virStringSortCompare;
+ virStringSortRevCompare;
+ virStringSplit;
+ virStringSplitCount;
++virStringStripControlChars;
+ virStringStripIPv6Brackets;
+ virStrncpy;
+ virStrndup;
+diff --git a/src/util/virstring.c b/src/util/virstring.c
+index 3dad9dd..1cd4987 100644
+--- a/src/util/virstring.c
++++ b/src/util/virstring.c
+@@ -968,3 +968,45 @@ virStringStripIPv6Brackets(char *str)
+         str[len - 2] = '\0';
+     }
+ }
++
++
++static const char control_chars[] =
++    "\x01\x02\x03\x04\x05\x06\x07"
++    "\x08" /* \t \n */ "\x0B\x0C" /* \r */ "\x0E\x0F"
++    "\x10\x11\x12\x13\x14\x15\x16\x17"
++    "\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F";
++
++bool
++virStringHasControlChars(const char *str)
++{
++    if (!str)
++        return false;
++
++    return str[strcspn(str, control_chars)] != '\0';
++}
++
++
++/**
++ * virStringStripControlChars:
++ * @str: the string to strip
++ *
++ * Modify the string in-place to remove the control characters
++ * in the interval: [0x01, 0x20)
++ */
++void
++virStringStripControlChars(char *str)
++{
++    size_t len, i, j;
++
++    if (!str)
++        return;
++
++    len = strlen(str);
++    for (i = 0, j = 0; i < len; i++) {
++        if (index(control_chars, str[i]))
++            continue;
++
++        str[j++] = str[i];
++    }
++    str[j] = '\0';
++}
+diff --git a/src/util/virstring.h b/src/util/virstring.h
+index 2ec60fa..e6dcb32 100644
+--- a/src/util/virstring.h
++++ b/src/util/virstring.h
+@@ -271,5 +271,7 @@ char *virStringReplace(const char *haystack,
+     ATTRIBUTE_NONNULL(1) ATTRIBUTE_NONNULL(2) ATTRIBUTE_NONNULL(3);
+ 
+ void virStringStripIPv6Brackets(char *str);
++bool virStringHasControlChars(const char *str);
++void virStringStripControlChars(char *str);
+ 
+ #endif /* __VIR_STRING_H__ */
+diff --git a/tests/virstringtest.c b/tests/virstringtest.c
+index 9d0b438..38d0126 100644
+--- a/tests/virstringtest.c
++++ b/tests/virstringtest.c
+@@ -551,6 +551,29 @@ static int testStripIPv6Brackets(const void *args)
+     return ret;
+ }
+ 
++static int testStripControlChars(const void *args)
++{
++    const struct testStripData *data = args;
++    int ret = -1;
++    char *res = NULL;
++
++    if (VIR_STRDUP(res, data->string) < 0)
++        goto cleanup;
++
++    virStringStripControlChars(res);
++
++    if (STRNEQ_NULLABLE(res, data->result)) {
++        fprintf(stderr, "Returned '%s', expected '%s'\n",
++                NULLSTR(res), NULLSTR(data->result));
++        goto cleanup;
++    }
++
++    ret = 0;
++
++ cleanup:
++    VIR_FREE(res);
++    return ret;
++}
+ 
+ static int
+ mymain(void)
+@@ -783,6 +806,22 @@ mymain(void)
+     TEST_STRIP_IPV6_BRACKETS(":hello]", ":hello]");
+     TEST_STRIP_IPV6_BRACKETS(":[]:", ":[]:");
+ 
++#define TEST_STRIP_CONTROL_CHARS(str, res)                              \
++    do {                                                                \
++        struct testStripData stripData = {                              \
++            .string = str,                                              \
++            .result = res,                                              \
++        };                                                              \
++        if (virtTestRun("Strip control chars from " #str,               \
++                        testStripControlChars, &stripData) < 0)         \
++            ret = -1;                                                   \
++    } while (0)
++
++    TEST_STRIP_CONTROL_CHARS(NULL, NULL);
++    TEST_STRIP_CONTROL_CHARS("\nhello \r hello\t", "\nhello \r hello\t");
++    TEST_STRIP_CONTROL_CHARS("\x01H\x02" "E\x03L\x04L\x05O", "HELLO");
++    TEST_STRIP_CONTROL_CHARS("\x01\x02\x03\x04HELL\x05O", "HELLO");
++    TEST_STRIP_CONTROL_CHARS("\nhello \x01\x07hello\t", "\nhello hello\t");
+     return ret == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
+ }
+ 

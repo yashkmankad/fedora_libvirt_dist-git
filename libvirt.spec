@@ -372,7 +372,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 1.2.14
-Release: 1%{?dist}%{?extra_release}
+Release: 2%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -382,6 +382,19 @@ URL: http://libvirt.org/
     %define mainturl stable_updates/
 %endif
 Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
+
+# Fix LXC domain startup (bz #1210397)
+Patch0001: 0001-lxc-create-the-required-directories-upon-driver-star.patch
+# Fix race starting multiple session daemons (bz #1200149)
+Patch0002: 0002-virNetSocketNewConnectUNIX-Use-flocks-when-spawning-.patch
+# Fix change-media success messages
+Patch0003: 0003-virsh-Improve-change-media-success-message.patch
+# Strip invalid control codes from XML (bz #1066564, bz #1184131)
+Patch0004: 0004-tests-rename-testStripIPv6BracketsData-to-testStripD.patch
+Patch0005: 0005-Add-functions-dealing-with-control-characters-in-str.patch
+Patch0006: 0006-Strip-control-characters-from-sysfs-attributes.patch
+Patch0007: 0007-Ignore-storage-volumes-with-control-codes-in-their-n.patch
+Patch0008: 0008-Strip-control-codes-in-virBufferEscapeString.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -2291,6 +2304,12 @@ exit 0
 %doc examples/systemtap
 
 %changelog
+* Wed Apr 15 2015 Cole Robinson <crobinso@redhat.com> - 1.2.14-2
+- Fix LXC domain startup (bz #1210397)
+- Fix race starting multiple session daemons (bz #1200149)
+- Fix change-media success messages
+- Strip invalid control codes from XML (bz #1066564, bz #1184131)
+
 * Thu Apr 02 2015 Cole Robinson <crobinso@redhat.com> - 1.2.14-1
 - Rebased to version 1.2.14
 

@@ -1,0 +1,35 @@
+From: Lubomir Rintel <lkundrak@v3.sk>
+Date: Wed, 8 Apr 2015 19:16:52 +0200
+Subject: [PATCH] lxc: create the required directories upon driver start
+
+/var/run may reside on a tmpfs and we fail to create the PID file if
+/var/run/lxc does not exist.
+
+Since commit 0a8addc1, the lxc driver's state directory isn't
+automatically created before starting a domain. Now, the lxc driver
+makes sure the state directory exists when it initializes.
+
+Signed-off-by: Lubomir Rintel <lkundrak@v3.sk>
+(cherry picked from commit da33a1ac1f6c0ae2ebe72bc385bbc7c407026956)
+---
+ src/lxc/lxc_driver.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/src/lxc/lxc_driver.c b/src/lxc/lxc_driver.c
+index 245000d..8dfa686 100644
+--- a/src/lxc/lxc_driver.c
++++ b/src/lxc/lxc_driver.c
+@@ -1648,6 +1648,13 @@ static int lxcStateInitialize(bool privileged,
+     if (!(caps = virLXCDriverGetCapabilities(lxc_driver, false)))
+         goto cleanup;
+ 
++    if (virFileMakePath(cfg->stateDir) < 0) {
++        virReportSystemError(errno,
++                             _("Failed to mkdir %s"),
++                             cfg->stateDir);
++        goto cleanup;
++    }
++
+     /* Get all the running persistent or transient configs first */
+     if (virDomainObjListLoadAllConfigs(lxc_driver->domains,
+                                        cfg->stateDir,
