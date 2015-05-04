@@ -344,6 +344,12 @@
 %endif
 
 
+# Advertise OVMF and AAVMF from nightly firmware repo
+%if 0%{?fedora}
+    %define with_loader_nvram --with-loader-nvram="/usr/share/edk2.git/ovmf-x64/OVMF_CODE-pure-efi.fd:/usr/share/edk2.git/ovmf-x64/OVMF_VARS-pure-efi.fd:/usr/share/edk2.git/aarch64/QEMU_EFI-pflash.raw:/usr/share/edk2.git/aarch64/vars-template-pflash.raw"
+%endif
+
+
 # The RHEL-5 Xen package has some feature backports. This
 # flag is set to enable use of those special bits on RHEL-5
 %if 0%{?rhel} == 5
@@ -371,8 +377,8 @@
 
 Summary: Library providing a simple virtualization API
 Name: libvirt
-Version: 1.2.14
-Release: 2%{?dist}%{?extra_release}
+Version: 1.2.15
+Release: 1%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -382,19 +388,6 @@ URL: http://libvirt.org/
     %define mainturl stable_updates/
 %endif
 Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
-
-# Fix LXC domain startup (bz #1210397)
-Patch0001: 0001-lxc-create-the-required-directories-upon-driver-star.patch
-# Fix race starting multiple session daemons (bz #1200149)
-Patch0002: 0002-virNetSocketNewConnectUNIX-Use-flocks-when-spawning-.patch
-# Fix change-media success messages
-Patch0003: 0003-virsh-Improve-change-media-success-message.patch
-# Strip invalid control codes from XML (bz #1066564, bz #1184131)
-Patch0004: 0004-tests-rename-testStripIPv6BracketsData-to-testStripD.patch
-Patch0005: 0005-Add-functions-dealing-with-control-characters-in-str.patch
-Patch0006: 0006-Strip-control-characters-from-sysfs-attributes.patch
-Patch0007: 0007-Ignore-storage-volumes-with-control-codes-in-their-n.patch
-Patch0008: 0008-Strip-control-codes-in-virBufferEscapeString.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -1535,6 +1528,7 @@ rm -f po/stamp-po
            %{with_packager_version} \
            --with-qemu-user=%{qemu_user} \
            --with-qemu-group=%{qemu_group} \
+           %{?with_loader_nvram} \
            %{?enable_werror} \
            --enable-expensive-tests \
            %{init_scripts}
@@ -1605,6 +1599,11 @@ rm -rf $RPM_BUILD_ROOT%{_sysconfdir}/logrotate.d/libvirtd.qemu
 rm -rf $RPM_BUILD_ROOT%{_sysconfdir}/libvirt/lxc.conf
 rm -rf $RPM_BUILD_ROOT%{_sysconfdir}/logrotate.d/libvirtd.lxc
 %endif
+%if ! %{with_libxl}
+rm -rf $RPM_BUILD_ROOT%{_sysconfdir}/libvirt/libxl.conf
+rm -f $RPM_BUILD_ROOT%{_datadir}/augeas/lenses/libvirtd_libxl.aug
+rm -f $RPM_BUILD_ROOT%{_datadir}/augeas/lenses/tests/test_libvirtd_libxl.aug
+%endif
 %if ! %{with_uml}
 rm -rf $RPM_BUILD_ROOT%{_sysconfdir}/logrotate.d/libvirtd.uml
 %endif
@@ -1622,7 +1621,7 @@ mv $RPM_BUILD_ROOT%{_datadir}/systemtap/tapset/libvirt_qemu_probes.stp \
 %endif
 
 %if 0%{?rhel} == 5
-rm -f $RPM_BUILD_ROOT%{_prefix}/lib/sysctl.d/libvirtd.conf
+rm -f $RPM_BUILD_ROOT%{_prefix}/lib/sysctl.d/60-libvirtd.conf
 %endif
 
 %clean
@@ -1910,7 +1909,7 @@ exit 0
 %config(noreplace) %{_sysconfdir}/libvirt/libvirtd.conf
 %config(noreplace) %{_sysconfdir}/libvirt/virtlockd.conf
     %if 0%{?fedora} || 0%{?rhel} >= 6
-%config(noreplace) %{_prefix}/lib/sysctl.d/libvirtd.conf
+%config(noreplace) %{_prefix}/lib/sysctl.d/60-libvirtd.conf
     %endif
 
 %config(noreplace) %{_sysconfdir}/logrotate.d/libvirtd
@@ -1986,9 +1985,6 @@ exit 0
 %dir %attr(0700, root, root) %{_localstatedir}/log/libvirt/qemu/
 %ghost %dir %attr(0700, root, root) %{_localstatedir}/run/libvirt/qemu/
 %dir %attr(0750, %{qemu_user}, %{qemu_group}) %{_localstatedir}/lib/libvirt/qemu/
-%dir %attr(0750, %{qemu_user}, %{qemu_group}) %{_localstatedir}/lib/libvirt/qemu/channel/
-%dir %attr(0750, %{qemu_user}, %{qemu_group}) %{_localstatedir}/lib/libvirt/qemu/channel/target/
-%dir %attr(0711, %{qemu_user}, %{qemu_group}) %{_localstatedir}/lib/libvirt/qemu/nvram/
 %dir %attr(0750, %{qemu_user}, %{qemu_group}) %{_localstatedir}/cache/libvirt/qemu/
 %{_datadir}/augeas/lenses/libvirtd_qemu.aug
 %{_datadir}/augeas/lenses/tests/test_libvirtd_qemu.aug
@@ -2010,9 +2006,12 @@ exit 0
 %dir %attr(0700, root, root) %{_localstatedir}/lib/libvirt/uml/
         %endif
         %if %{with_libxl}
+%config(noreplace) %{_sysconfdir}/libvirt/libxl.conf
 %dir %attr(0700, root, root) %{_localstatedir}/log/libvirt/libxl/
 %ghost %dir %{_localstatedir}/run/libvirt/libxl/
 %dir %attr(0700, root, root) %{_localstatedir}/lib/libvirt/libxl/
+%{_datadir}/augeas/lenses/libvirtd_libxl.aug
+%{_datadir}/augeas/lenses/tests/test_libvirtd_libxl.aug
         %endif
         %if %{with_xen}
 %dir %attr(0700, root, root) %{_localstatedir}/lib/libvirt/xen/
@@ -2089,9 +2088,6 @@ exit 0
 %config(noreplace) %{_sysconfdir}/logrotate.d/libvirtd.qemu
 %ghost %dir %attr(0700, root, root) %{_localstatedir}/run/libvirt/qemu/
 %dir %attr(0750, %{qemu_user}, %{qemu_group}) %{_localstatedir}/lib/libvirt/qemu/
-%dir %attr(0750, %{qemu_user}, %{qemu_group}) %{_localstatedir}/lib/libvirt/qemu/channel/
-%dir %attr(0750, %{qemu_user}, %{qemu_group}) %{_localstatedir}/lib/libvirt/qemu/channel/target/
-%dir %attr(0711, %{qemu_user}, %{qemu_group}) %{_localstatedir}/lib/libvirt/qemu/nvram/
 %dir %attr(0750, %{qemu_user}, %{qemu_group}) %{_localstatedir}/cache/libvirt/qemu/
 %{_datadir}/augeas/lenses/libvirtd_qemu.aug
 %{_datadir}/augeas/lenses/tests/test_libvirtd_qemu.aug
@@ -2132,6 +2128,11 @@ exit 0
         %if %{with_libxl}
 %files daemon-driver-libxl
 %defattr(-, root, root)
+%config(noreplace) %{_sysconfdir}/libvirt/libxl.conf
+%config(noreplace) %{_sysconfdir}/libvirt/libxl-lockd.conf
+%config(noreplace) %{_sysconfdir}/libvirt/libxl-sanlock.conf
+%{_datadir}/augeas/lenses/libvirtd_libxl.aug
+%{_datadir}/augeas/lenses/tests/test_libvirtd_libxl.aug
 %dir %attr(0700, root, root) %{_localstatedir}/log/libvirt/libxl/
 %ghost %dir %{_localstatedir}/run/libvirt/libxl/
 %dir %attr(0700, root, root) %{_localstatedir}/lib/libvirt/libxl/
@@ -2304,6 +2305,9 @@ exit 0
 %doc examples/systemtap
 
 %changelog
+* Mon May 04 2015 Cole Robinson <crobinso@redhat.com> - 1.2.15-1
+- Rebased to version 1.2.15
+
 * Wed Apr 15 2015 Cole Robinson <crobinso@redhat.com> - 1.2.14-2
 - Fix LXC domain startup (bz #1210397)
 - Fix race starting multiple session daemons (bz #1200149)
