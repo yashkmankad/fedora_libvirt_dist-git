@@ -378,7 +378,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 1.2.15
-Release: 1%{?dist}%{?extra_release}
+Release: 2%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -388,6 +388,8 @@ URL: http://libvirt.org/
     %define mainturl stable_updates/
 %endif
 Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
+
+Patch1: 0001-caps-Don-t-default-to-i686-of-KVM-on-x86_64.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -2305,6 +2307,9 @@ exit 0
 %doc examples/systemtap
 
 %changelog
+* Thu May 07 2015 Richard W.M. Jones <rjones@redhat.com> - 1.2.15-2
+- Add Cole Robinson's patch to fix arch selection (bz# 1219198, bz#1219191)
+
 * Mon May 04 2015 Cole Robinson <crobinso@redhat.com> - 1.2.15-1
 - Rebased to version 1.2.15
 
