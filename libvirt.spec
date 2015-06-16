@@ -378,7 +378,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 1.2.16
-Release: 1%{?dist}%{?extra_release}
+Release: 2%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -2319,6 +2319,9 @@ exit 0
 %doc examples/systemtap
 
 %changelog
+* Tue Jun 16 2015 Daniel P. Berrange <berrange@redhat.com> - 1.2.16-2
+- Rebuild for libwsman soname bump
+
 * Mon Jun 01 2015 Daniel P. Berrange <berrange@redhat.com> - 1.2.16-1
 - Update to 1.2.16 release
 
