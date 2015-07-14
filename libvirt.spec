@@ -97,7 +97,7 @@
 %define with_esx           0%{!?_without_esx:1}
 %define with_hyperv        0%{!?_without_hyperv:1}
 %define with_xenapi        0%{!?_without_xenapi:1}
-%define with_parallels     0%{!?_without_parallels:1}
+%define with_vz            0%{!?_without_vz:1}
 # No test for bhyve, because it does not build on Linux
 
 # Then the secondary host drivers, which run inside libvirtd
@@ -201,7 +201,7 @@
     %define with_xenapi 0
     %define with_libxl 0
     %define with_hyperv 0
-    %define with_parallels 0
+    %define with_vz 0
 %endif
 
 # Fedora 17 / RHEL-7 are first where we use systemd. Although earlier
@@ -377,8 +377,8 @@
 
 Summary: Library providing a simple virtualization API
 Name: libvirt
-Version: 1.2.16
-Release: 3%{?dist}%{?extra_release}
+Version: 1.2.17
+Release: 1%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -1216,6 +1216,7 @@ Includes the Sanlock lock manager plugin for the QEMU
 driver
 %endif
 
+
 %prep
 %setup -q
 
@@ -1307,8 +1308,8 @@ rm -f $PATCHLIST
     %define _without_vmware --without-vmware
 %endif
 
-%if ! %{with_parallels}
-    %define _without_parallels --without-parallels
+%if ! %{with_vz}
+    %define _without_vz --without-vz
 %endif
 
 %if ! %{with_polkit}
@@ -1490,7 +1491,7 @@ rm -f po/stamp-po
            %{?_without_esx} \
            %{?_without_hyperv} \
            %{?_without_vmware} \
-           %{?_without_parallels} \
+           %{?_without_vz} \
            --without-bhyve \
            %{?_without_interface} \
            %{?_without_network} \
@@ -1558,6 +1559,9 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libvirt/connection-driver/*.a
 %if %{with_wireshark}
 rm -f $RPM_BUILD_ROOT%{_libdir}/wireshark/plugins/*/libvirt.la
 %endif
+
+# Temporarily get rid of not-installed libvirt-admin.so
+rm -f $RPM_BUILD_ROOT%{_libdir}/libvirt-admin.so
 
 %if %{with_network}
 install -d -m 0755 $RPM_BUILD_ROOT%{_datadir}/lib/libvirt/dnsmasq/
@@ -2020,6 +2024,7 @@ exit 0
         %if %{with_libxl}
 %config(noreplace) %{_sysconfdir}/libvirt/libxl.conf
 %config(noreplace) %{_sysconfdir}/logrotate.d/libvirtd.libxl
+%config(noreplace) %{_sysconfdir}/libvirt/libxl-lockd.conf
 %dir %attr(0700, root, root) %{_localstatedir}/log/libvirt/libxl/
 %ghost %dir %{_localstatedir}/run/libvirt/libxl/
 %dir %attr(0700, root, root) %{_localstatedir}/lib/libvirt/libxl/
@@ -2144,7 +2149,6 @@ exit 0
 %config(noreplace) %{_sysconfdir}/libvirt/libxl.conf
 %config(noreplace) %{_sysconfdir}/logrotate.d/libvirtd.libxl
 %config(noreplace) %{_sysconfdir}/libvirt/libxl-lockd.conf
-%config(noreplace) %{_sysconfdir}/libvirt/libxl-sanlock.conf
 %{_datadir}/augeas/lenses/libvirtd_libxl.aug
 %{_datadir}/augeas/lenses/tests/test_libvirtd_libxl.aug
 %dir %attr(0700, root, root) %{_localstatedir}/log/libvirt/libxl/
@@ -2197,6 +2201,9 @@ exit 0
     %if %{with_qemu}
 %config(noreplace) %{_sysconfdir}/libvirt/qemu-sanlock.conf
     %endif
+    %if %{with_libxl}
+%config(noreplace) %{_sysconfdir}/libvirt/libxl-sanlock.conf
+    %endif
 %attr(0755, root, root) %{_libdir}/libvirt/lock-driver/sanlock.so
 %{_datadir}/augeas/lenses/libvirt_sanlock.aug
 %{_datadir}/augeas/lenses/tests/test_libvirt_sanlock.aug
@@ -2222,6 +2229,7 @@ exit 0
 %{_libdir}/libvirt.so.*
 %{_libdir}/libvirt-qemu.so.*
 %{_libdir}/libvirt-lxc.so.*
+%{_libdir}/libvirt-admin.so.*
 
 %if %{with_dtrace}
 %{_datadir}/systemtap/tapset/libvirt_probes*.stp
@@ -2307,6 +2315,7 @@ exit 0
 %{_datadir}/libvirt/api/libvirt-qemu-api.xml
 %{_datadir}/libvirt/api/libvirt-lxc-api.xml
 
+
 %doc docs/*.html docs/html docs/*.gif
 %doc docs/libvirt-api.xml
 %doc examples/hellolibvirt
@@ -2319,6 +2328,12 @@ exit 0
 %doc examples/systemtap
 
 %changelog
+* Tue Jul 14 2015 Cole Robinson <crobinso@redhat.com> - 1.2.17-1
+- numerous improvements and refactoring of the parallels driver
+- hardening of vcpu code
+- hardening of migration code
+- a lot of improvement and bug fixes
+
 * Sun Jul 12 2015 Peter Robinson <pbrobinson@fedoraproject.org> 1.2.16-3
 - Rebuild (aarch64)
 
