@@ -378,7 +378,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 1.2.17
-Release: 1%{?dist}%{?extra_release}
+Release: 2%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -388,6 +388,12 @@ URL: http://libvirt.org/
     %define mainturl stable_updates/
 %endif
 Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
+
+# Upstream commit 699faeacb10459fed748d425eb044ef69697e804.
+Patch1: 0001-rpc-Add-virNetDaemonHasClients.patch
+
+# Upstream commit b7ea58c262194037042284a14fb1608c9cf31884.
+Patch2: 0001-rpc-Rework-timerActive-logic-in-daemon.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -2331,6 +2337,9 @@ exit 0
 %doc examples/systemtap
 
 %changelog
+* Wed Jul 29 2015 Richard W.M. Jones <rjones@redhat.com> - 1.2.17-2
+- Fix 'Cannot write data: Broken pipe [code=38 domain=7]' (RHBZ#1247746).
+
 * Tue Jul 14 2015 Cole Robinson <crobinso@redhat.com> - 1.2.17-1
 - numerous improvements and refactoring of the parallels driver
 - hardening of vcpu code
