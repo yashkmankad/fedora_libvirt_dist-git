@@ -388,6 +388,7 @@ URL: http://libvirt.org/
     %define mainturl stable_updates/
 %endif
 Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
+Patch1: 0001-tests-extend-workaround-for-gnutls-private-key-loadi.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
