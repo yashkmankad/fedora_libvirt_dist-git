@@ -377,7 +377,7 @@
 
 Summary: Library providing a simple virtualization API
 Name: libvirt
-Version: 1.2.18
+Version: 1.2.19
 Release: 1%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
@@ -388,7 +388,6 @@ URL: http://libvirt.org/
     %define mainturl stable_updates/
 %endif
 Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
-Patch1: 0001-tests-extend-workaround-for-gnutls-private-key-loadi.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -2331,6 +2330,9 @@ exit 0
 %doc examples/systemtap
 
 %changelog
+* Wed Sep  2 2015 Daniel P. Berrange <berrange@redhat.com> - 1.2.19-1
+- Update to 1.2.19 release
+
 * Tue Aug  4 2015 Daniel P. Berrange <berrange@redhat.com> - 1.2.18-1
 - Update to 1.2.18 release
 
