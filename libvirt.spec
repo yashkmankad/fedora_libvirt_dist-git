@@ -377,8 +377,8 @@
 
 Summary: Library providing a simple virtualization API
 Name: libvirt
-Version: 1.2.20
-Release: 2%{?dist}%{?extra_release}
+Version: 1.2.21
+Release: 1%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -1170,7 +1170,7 @@ virtualization capabilities of recent versions of Linux (and other OSes).
 %package wireshark
 Summary: Wireshark dissector plugin for libvirt RPC transactions
 Group: Development/Libraries
-Requires: wireshark
+Requires: wireshark >= 1.12.6-4
 Requires: %{name}-client = %{version}-%{release}
 
 %description wireshark
@@ -1256,6 +1256,7 @@ if [ $COUNT -gt 0 ]; then
 fi
 echo "Applied $COUNT patches"
 rm -f $PATCHLIST
+rm -rf .git
 
 %build
 %if ! %{with_xen}
@@ -1560,6 +1561,8 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libvirt/connection-driver/*.a
 %endif
 %if %{with_wireshark}
 rm -f $RPM_BUILD_ROOT%{_libdir}/wireshark/plugins/*/libvirt.la
+mv $RPM_BUILD_ROOT%{_libdir}/wireshark/plugins/*/libvirt.so \
+   $RPM_BUILD_ROOT%{_libdir}/wireshark/plugins/libvirt.so
 %endif
 
 # Temporarily get rid of not-installed libvirt-admin.so
@@ -2278,7 +2281,7 @@ exit 0
 
 %if %{with_wireshark}
 %files wireshark
-%{_libdir}/wireshark/plugins/*/libvirt.so
+%{_libdir}/wireshark/plugins/libvirt.so
 %endif
 
 %if %{with_lxc}
@@ -2333,6 +2336,9 @@ exit 0
 %doc examples/systemtap
 
 %changelog
+* Wed Nov 11 2015 Cole Robinson <crobinso@redhat.com> - 1.2.21-1
+- Update to 1.2.21 release
+
 * Sun Oct 11 2015 Cole Robinson <crobinso@redhat.com> - 1.2.20-2
 - Rebuild for xen 4.6
 
