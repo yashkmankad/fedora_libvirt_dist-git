@@ -388,6 +388,7 @@ URL: http://libvirt.org/
     %define mainturl stable_updates/
 %endif
 Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
+Patch1: 0001-test-qemuxml2argv-Mock-virMemoryMaxValue-to-remove-3.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
