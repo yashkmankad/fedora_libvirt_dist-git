@@ -379,7 +379,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 1.3.1
-Release: 1%{?dist}%{?extra_release}
+Release: 2%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -2378,6 +2378,9 @@ exit 0
 %doc examples/systemtap
 
 %changelog
+* Thu Feb 04 2016 Fedora Release Engineering <releng@fedoraproject.org> - 1.3.1-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_24_Mass_Rebuild
+
 * Tue Jan 19 2016 Daniel Berrange <berrange@redhat.com> - 1.3.1-1
 - Update to 1.3.1 release
 
