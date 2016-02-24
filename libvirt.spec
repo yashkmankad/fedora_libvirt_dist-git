@@ -271,10 +271,9 @@
 %endif
 
 # Enable wireshark plugins for all distros shipping libvirt 1.2.2 or newer
-# Disabled due to https://bugzilla.redhat.com/show_bug.cgi?id=1300002
-#if 0%{?fedora} >= 21
-    #define with_wireshark 0%{!?_without_wireshark:1}
-#endif
+%if 0%{?fedora} >= 21
+    %define with_wireshark 0%{!?_without_wireshark:1}
+%endif
 
 # Disable some drivers when building without libvirt daemon.
 # The logic is the same as in configure.ac
