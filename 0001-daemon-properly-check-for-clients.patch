@@ -1,0 +1,45 @@
+From 2608c9a951caed5ebec7ad36571c5adb6671b855 Mon Sep 17 00:00:00 2001
+From: Martin Kletzander <mkletzan@redhat.com>
+Date: Tue, 1 Mar 2016 15:42:32 +0100
+Subject: [PATCH] daemon: properly check for clients
+
+Signed-off-by: Martin Kletzander <mkletzan@redhat.com>
+(cherry picked from commit 78b0ccc71e99f769068974ff56638c99b1c3b4de)
+---
+ src/rpc/virnetdaemon.c | 14 +++++++++++---
+ 1 file changed, 11 insertions(+), 3 deletions(-)
+
+diff --git a/src/rpc/virnetdaemon.c b/src/rpc/virnetdaemon.c
+index 298fbf4..b05ba99 100644
+--- a/src/rpc/virnetdaemon.c
++++ b/src/rpc/virnetdaemon.c
+@@ -843,15 +843,23 @@ virNetDaemonClose(virNetDaemonPtr dmn)
+ static int
+ daemonServerHasClients(void *payload,
+                        const void *key ATTRIBUTE_UNUSED,
+-                       void *opaque ATTRIBUTE_UNUSED)
++                       void *opaque)
+ {
++    bool *clients = opaque;
+     virNetServerPtr srv = payload;
+ 
+-    return virNetServerHasClients(srv);
++    if (virNetServerHasClients(srv))
++        *clients = true;
++
++    return 0;
+ }
+ 
+ bool
+ virNetDaemonHasClients(virNetDaemonPtr dmn)
+ {
+-    return virHashForEach(dmn->servers, daemonServerHasClients, NULL) > 0;
++    bool ret = false;
++
++    virHashForEach(dmn->servers, daemonServerHasClients, &ret);
++
++    return ret;
+ }
+-- 
+2.7.2
+

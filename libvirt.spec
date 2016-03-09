@@ -378,7 +378,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 1.3.2
-Release: 1%{?dist}%{?extra_release}
+Release: 2%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -388,6 +388,12 @@ URL: http://libvirt.org/
     %define mainturl stable_updates/
 %endif
 Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
+
+# NON-UPSTREAM patch which fixes regression where libvirt
+# drops connections after > 30 seconds.
+# https://bugzilla.redhat.com/1315606
+# https://github.com/nertpinx/libvirt/commit/78b0ccc71e99f769068974ff56638c99b1c3b4de
+Patch0001: 0001-daemon-properly-check-for-clients.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -2377,6 +2383,9 @@ exit 0
 %doc examples/systemtap
 
 %changelog
+* Wed Mar  9 2016 Richard W.M. Jones <rjones@redhat.com> - 1.3.2-2
+- Add fix for RHBZ#1315606.
+
 * Tue Mar  1 2016 Daniel Berrange <berrange@redhat.com> - 1.3.2-1
 - Update to 1.3.2 release
 
