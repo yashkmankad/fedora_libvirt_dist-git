@@ -378,7 +378,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 1.3.2
-Release: 2%{?dist}%{?extra_release}
+Release: 3%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -389,11 +389,15 @@ URL: http://libvirt.org/
 %endif
 Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
 
-# NON-UPSTREAM patch which fixes regression where libvirt
-# drops connections after > 30 seconds.
-# https://bugzilla.redhat.com/1315606
-# https://github.com/nertpinx/libvirt/commit/78b0ccc71e99f769068974ff56638c99b1c3b4de
-Patch0001: 0001-daemon-properly-check-for-clients.patch
+# Fix qemu:///session disconnect after 30 seconds
+Patch0001: 0001-daemon-Properly-check-for-clients.patch
+# Fix 'permission denied' errors trying to unlink disk images (bz #1289327)
+Patch0002: 0002-util-virfile-Clarify-setuid-usage-for-virFileRemove.patch
+Patch0003: 0003-util-virfile-Only-setuid-for-virFileRemove-if-on-NFS.patch
+# Fix qemu:///session connect race failures (bz #1271183)
+Patch0004: 0004-rpc-wait-longer-for-session-daemon-to-start-up.patch
+# driver: log missing modules as INFO, not WARN (bz #1274849)
+Patch0005: 0005-driver-log-missing-modules-as-INFO-not-WARN.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -2383,6 +2387,12 @@ exit 0
 %doc examples/systemtap
 
 %changelog
+* Thu Mar 17 2016 Cole Robinson <crobinso@redhat.com> - 1.3.2-3
+- Fix qemu:///session disconnect after 30 seconds
+- Fix 'permission denied' errors trying to unlink disk images (bz #1289327)
+- Fix qemu:///session connect race failures (bz #1271183)
+- driver: log missing modules as INFO, not WARN (bz #1274849)
+
 * Wed Mar  9 2016 Richard W.M. Jones <rjones@redhat.com> - 1.3.2-2
 - Add fix for RHBZ#1315606.
 

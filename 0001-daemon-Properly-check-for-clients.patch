@@ -1,10 +1,14 @@
-From 2608c9a951caed5ebec7ad36571c5adb6671b855 Mon Sep 17 00:00:00 2001
 From: Martin Kletzander <mkletzan@redhat.com>
 Date: Tue, 1 Mar 2016 15:42:32 +0100
-Subject: [PATCH] daemon: properly check for clients
+Subject: [PATCH] daemon: Properly check for clients
+
+virHashForEach() returns 0 if everything went nice, so our session
+daemon was timing out even when there was a client connected.
+
+Resolves: https://bugzilla.redhat.com/show_bug.cgi?id=1315606
 
 Signed-off-by: Martin Kletzander <mkletzan@redhat.com>
-(cherry picked from commit 78b0ccc71e99f769068974ff56638c99b1c3b4de)
+(cherry picked from commit 6541a2b4acd453ebbf10a4427f9ec4e794d3ba6d)
 ---
  src/rpc/virnetdaemon.c | 14 +++++++++++---
  1 file changed, 11 insertions(+), 3 deletions(-)
@@ -40,6 +44,3 @@ index 298fbf4..b05ba99 100644
 +
 +    return ret;
  }
--- 
-2.7.2
-
