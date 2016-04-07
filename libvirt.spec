@@ -155,6 +155,7 @@
 # Non-server/HV driver defaults which are always enabled
 %define with_sasl          0%{!?_without_sasl:1}
 %define with_audit         0%{!?_without_audit:1}
+%define with_nss_plugin    0%{!?_without_nss_plugin:1}
 
 
 # Finally set the OS / architecture specific special cases
@@ -377,8 +378,8 @@
 
 Summary: Library providing a simple virtualization API
 Name: libvirt
-Version: 1.3.2
-Release: 3%{?dist}%{?extra_release}
+Version: 1.3.3
+Release: 1%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -388,16 +389,6 @@ URL: http://libvirt.org/
     %define mainturl stable_updates/
 %endif
 Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
-
-# Fix qemu:///session disconnect after 30 seconds
-Patch0001: 0001-daemon-Properly-check-for-clients.patch
-# Fix 'permission denied' errors trying to unlink disk images (bz #1289327)
-Patch0002: 0002-util-virfile-Clarify-setuid-usage-for-virFileRemove.patch
-Patch0003: 0003-util-virfile-Only-setuid-for-virFileRemove-if-on-NFS.patch
-# Fix qemu:///session connect race failures (bz #1271183)
-Patch0004: 0004-rpc-wait-longer-for-session-daemon-to-start-up.patch
-# driver: log missing modules as INFO, not WARN (bz #1274849)
-Patch0005: 0005-driver-log-missing-modules-as-INFO-not-WARN.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -1228,6 +1219,16 @@ Includes the Sanlock lock manager plugin for the QEMU
 driver
 %endif
 
+%if %{with_nss_plugin}
+%package nss
+Summary: Libvirt plugin for Name Service Switch
+Group: Development/Libraries
+Requires: libvirt-daemon-driver-network = %{version}-%{release}
+
+%description nss
+Libvirt plugin for NSS for translating domain names into IP addresses.
+%endif
+
 
 %prep
 %setup -q
@@ -1461,6 +1462,10 @@ rm -rf .git
     %define _without_pm_utils --without-pm-utils
 %endif
 
+%if ! %{with_nss_plugin}
+    %define _without_nss_plugin --without-nss-plugin
+%endif
+
 %define when  %(date +"%%F-%%T")
 %define where %(hostname)
 %define who   %{?packager}%{!?packager:Unknown}
@@ -1538,6 +1543,7 @@ rm -f po/stamp-po
            %{?_without_wireshark} \
            %{?_without_systemd_daemon} \
            %{?_without_pm_utils} \
+           %{?_without_nss_plugin} \
            %{with_packager} \
            %{with_packager_version} \
            --with-qemu-user=%{qemu_user} \
@@ -2334,6 +2340,11 @@ exit 0
 %{_libdir}/wireshark/plugins/libvirt.so
 %endif
 
+%if %{with_nss_plugin}
+%files nss
+%{_libdir}/libnss_libvirt.so.2
+%endif
+
 %if %{with_lxc}
 %files login-shell
 %attr(4750, root, virtlogin) %{_bindir}/virt-login-shell
@@ -2387,6 +2398,9 @@ exit 0
 %doc examples/systemtap
 
 %changelog
+* Thu Apr 07 2016 Cole Robinson <crobinso@redhat.com> - 1.3.3-1
+- Rebased to version 1.3.3
+
 * Thu Mar 17 2016 Cole Robinson <crobinso@redhat.com> - 1.3.2-3
 - Fix qemu:///session disconnect after 30 seconds
 - Fix 'permission denied' errors trying to unlink disk images (bz #1289327)
