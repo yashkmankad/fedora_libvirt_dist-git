@@ -379,7 +379,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 1.3.3
-Release: 1%{?dist}%{?extra_release}
+Release: 2%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -389,6 +389,12 @@ URL: http://libvirt.org/
     %define mainturl stable_updates/
 %endif
 Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
+
+# libvirt assigns same address to two PCI devices (bz #1325085)
+Patch0001: 0001-qemu-support-virt-2.6-machine-type-on-arm.patch
+# Fix build with -Werror
+Patch0002: 0002-build-cleanup-GCC-4.6-Wlogical-op-workaround.patch
+Patch0003: 0003-build-add-GCC-6.0-Wlogical-op-workaround.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -2398,6 +2404,10 @@ exit 0
 %doc examples/systemtap
 
 %changelog
+* Thu Apr 14 2016 Cole Robinson <crobinso@redhat.com> - 1.3.3-2
+- libvirt assigns same address to two PCI devices (bz #1325085)
+- Fix build with -Werror
+
 * Thu Apr 07 2016 Cole Robinson <crobinso@redhat.com> - 1.3.3-1
 - Rebased to version 1.3.3
 
