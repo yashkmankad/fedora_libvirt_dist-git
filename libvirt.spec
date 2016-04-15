@@ -13,6 +13,7 @@
 # Default to skipping autoreconf.  Distros can change just this one line
 # (or provide a command-line override) if they backport any patches that
 # touch configure.ac or Makefile.am.
+%global enable_autotools 1
 %{!?enable_autotools:%global enable_autotools 0}
 
 # A client only build will create a libvirt.so only containing
