@@ -380,7 +380,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 1.3.3
-Release: 2%{?dist}%{?extra_release}
+Release: 3%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -396,6 +396,11 @@ Patch0001: 0001-qemu-support-virt-2.6-machine-type-on-arm.patch
 # Fix build with -Werror
 Patch0002: 0002-build-cleanup-GCC-4.6-Wlogical-op-workaround.patch
 Patch0003: 0003-build-add-GCC-6.0-Wlogical-op-workaround.patch
+
+# Fix 200ms performance problem when waiting for monitor socket of
+# new domains.
+# Upstream commit beaa447a2982bc78adb26c183560d0ee566c1268.
+Patch0004: 0001-Add-functions-for-handling-exponential-backoff-loops.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -2405,6 +2410,9 @@ exit 0
 %doc examples/systemtap
 
 %changelog
+* Tue Apr 19 2016 Cole Robinson <crobinso@redhat.com> - 1.3.3-3
+- Fix 200ms performance problem when waiting for monitor socket of new domains.
+
 * Thu Apr 14 2016 Cole Robinson <crobinso@redhat.com> - 1.3.3-2
 - libvirt assigns same address to two PCI devices (bz #1325085)
 - Fix build with -Werror
