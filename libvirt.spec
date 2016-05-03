@@ -13,7 +13,6 @@
 # Default to skipping autoreconf.  Distros can change just this one line
 # (or provide a command-line override) if they backport any patches that
 # touch configure.ac or Makefile.am.
-%global enable_autotools 1
 %{!?enable_autotools:%global enable_autotools 0}
 
 # A client only build will create a libvirt.so only containing
@@ -79,6 +78,9 @@
 %if 0%{?rhel}
     %define with_qemu_tcg 0
     %define qemu_kvm_arches x86_64
+    %if 0%{?rhel} >= 7
+        %define qemu_kvm_arches x86_64 %{power64}
+    %endif
 %endif
 
 %ifarch %{qemu_kvm_arches}
@@ -379,8 +381,8 @@
 
 Summary: Library providing a simple virtualization API
 Name: libvirt
-Version: 1.3.3
-Release: 3%{?dist}%{?extra_release}
+Version: 1.3.4
+Release: 1%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -390,17 +392,6 @@ URL: http://libvirt.org/
     %define mainturl stable_updates/
 %endif
 Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
-
-# libvirt assigns same address to two PCI devices (bz #1325085)
-Patch0001: 0001-qemu-support-virt-2.6-machine-type-on-arm.patch
-# Fix build with -Werror
-Patch0002: 0002-build-cleanup-GCC-4.6-Wlogical-op-workaround.patch
-Patch0003: 0003-build-add-GCC-6.0-Wlogical-op-workaround.patch
-
-# Fix 200ms performance problem when waiting for monitor socket of
-# new domains.
-# Upstream commit beaa447a2982bc78adb26c183560d0ee566c1268.
-Patch0004: 0001-Add-functions-for-handling-exponential-backoff-loops.patch
 
 %if %{with_libvirtd}
 Requires: libvirt-daemon = %{version}-%{release}
@@ -1206,7 +1197,6 @@ namespaces.
 Summary: Libraries, includes, etc. to compile with the libvirt library
 Group: Development/Libraries
 Requires: %{name}-client = %{version}-%{release}
-Requires: %{name}-docs = %{version}-%{release}
 Requires: pkgconfig
 
 %description devel
@@ -1719,7 +1709,7 @@ exit 0
 
     %if %{with_systemd}
         %if %{with_systemd_macros}
-            %systemd_post virtlockd.socket virtlogd.socket libvirtd.service libvirtd.socket
+            %systemd_post virtlockd.socket virtlogd.socket libvirtd.service
         %else
 if [ $1 -eq 1 ] ; then
     # Initial installation
@@ -1748,19 +1738,17 @@ fi
 %preun daemon
     %if %{with_systemd}
         %if %{with_systemd_macros}
-            %systemd_preun libvirtd.socket libvirtd.service virtlogd.socket virtlogd.service virtlockd.socket virtlockd.service
+            %systemd_preun libvirtd.service virtlogd.socket virtlogd.service virtlockd.socket virtlockd.service
         %else
 if [ $1 -eq 0 ] ; then
     # Package removal, not upgrade
     /bin/systemctl --no-reload disable \
-        libvirtd.socket \
         libvirtd.service \
         virtlogd.socket \
         virtlogd.service \
         virtlockd.socket \
         virtlockd.service > /dev/null 2>&1 || :
     /bin/systemctl stop \
-        libvirtd.socket \
         libvirtd.service \
         virtlogd.socket \
         virtlogd.service \
@@ -1861,6 +1849,14 @@ if test $1 -eq 1 && test ! -f %{_sysconfdir}/libvirt/qemu/networks/default.xml ;
          < %{_datadir}/libvirt/networks/default.xml \
          > %{_sysconfdir}/libvirt/qemu/networks/default.xml
     ln -s ../default.xml %{_sysconfdir}/libvirt/qemu/networks/autostart/default.xml
+
+    # Make sure libvirt picks up the new network defininiton
+        %if %{with_systemd}
+    /bin/systemctl try-restart libvirtd.service >/dev/null 2>&1 ||:
+        %else
+    /sbin/service libvirtd condrestart > /dev/null 2>&1 || :
+        %endif
+
 fi
     %endif
 
@@ -1958,7 +1954,9 @@ exit 0
 
 %files docs
 %defattr(-, root, root)
-%doc AUTHORS ChangeLog.gz NEWS README TODO libvirt-docs/*
+%doc AUTHORS ChangeLog.gz NEWS README TODO
+%doc libvirt-docs/*
+%doc docs/*.html docs/html docs/*.gif
 
 # API docs
 %dir %{_datadir}/gtk-doc/html/libvirt/
@@ -1966,6 +1964,16 @@ exit 0
 %doc %{_datadir}/gtk-doc/html/libvirt/*.html
 %doc %{_datadir}/gtk-doc/html/libvirt/*.png
 %doc %{_datadir}/gtk-doc/html/libvirt/*.css
+%doc examples/hellolibvirt
+%doc examples/object-events
+%doc examples/dominfo
+%doc examples/domsuspend
+%doc examples/dommigrate
+%doc examples/openauth
+%doc examples/xml
+%doc examples/rename
+%doc examples/systemtap
+
 
 %if %{with_libvirtd}
 %files daemon
@@ -1975,7 +1983,6 @@ exit 0
 
     %if %{with_systemd}
 %{_unitdir}/libvirtd.service
-%{_unitdir}/libvirtd.socket
 %{_unitdir}/virtlogd.service
 %{_unitdir}/virtlogd.socket
 %{_unitdir}/virtlockd.service
@@ -2395,21 +2402,14 @@ exit 0
 %{_datadir}/libvirt/api/libvirt-api.xml
 %{_datadir}/libvirt/api/libvirt-qemu-api.xml
 %{_datadir}/libvirt/api/libvirt-lxc-api.xml
-
-
-%doc docs/*.html docs/html docs/*.gif
+# Needed building python bindings
 %doc docs/libvirt-api.xml
-%doc examples/hellolibvirt
-%doc examples/object-events
-%doc examples/dominfo
-%doc examples/domsuspend
-%doc examples/dommigrate
-%doc examples/openauth
-%doc examples/xml
-%doc examples/rename
-%doc examples/systemtap
+
 
 %changelog
+* Mon May 02 2016 Cole Robinson <crobinso@redhat.com> - 1.3.4-1
+- Rebased to version 1.3.4
+
 * Tue Apr 19 2016 Cole Robinson <crobinso@redhat.com> - 1.3.3-3
 - Fix 200ms performance problem when waiting for monitor socket of new domains.
 
