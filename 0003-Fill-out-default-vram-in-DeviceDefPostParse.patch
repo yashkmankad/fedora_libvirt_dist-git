@@ -1,0 +1,85 @@
+From: =?UTF-8?q?J=C3=A1n=20Tomko?= <jtomko@redhat.com>
+Date: Wed, 11 May 2016 12:39:52 +0200
+Subject: [PATCH] Fill out default vram in DeviceDefPostParse
+
+Move filling out the default video (v)ram to DeviceDefPostParse.
+
+This means it can be removed from virDomainVideoDefParseXML
+and qemuParseCommandLine. Also, we no longer need to special case
+VIR_DOMAIN_VIRT_XEN, since the per-driver callback gets called
+before the generic one.
+
+(cherry picked from commit 538012c8a30230065d1bfe09892279dd8b89193f)
+---
+ src/conf/domain_conf.c        | 15 ++++++---------
+ src/qemu/qemu_parse_command.c |  2 --
+ 2 files changed, 6 insertions(+), 11 deletions(-)
+
+diff --git a/src/conf/domain_conf.c b/src/conf/domain_conf.c
+index aa0268b..7a0b8c5 100644
+--- a/src/conf/domain_conf.c
++++ b/src/conf/domain_conf.c
+@@ -4155,6 +4155,12 @@ virDomainDeviceDefPostParseInternal(virDomainDeviceDefPtr dev,
+ 
+     if (dev->type == VIR_DOMAIN_DEVICE_VIDEO) {
+         virDomainVideoDefPtr video = dev->data.video;
++        /* Fill out (V)RAM if the driver-specific callback did not do so */
++        if (video->ram == 0 && video->type == VIR_DOMAIN_VIDEO_TYPE_QXL)
++            video->ram = virDomainVideoDefaultRAM(def, video->type);
++        if (video->vram == 0)
++            video->vram = virDomainVideoDefaultRAM(def, video->type);
++
+         video->ram = VIR_ROUND_UP_POWER_OF_TWO(video->ram);
+         video->vram = VIR_ROUND_UP_POWER_OF_TWO(video->vram);
+     }
+@@ -11970,10 +11976,6 @@ unsigned int
+ virDomainVideoDefaultRAM(const virDomainDef *def,
+                          const virDomainVideoType type)
+ {
+-    /* Defer setting default vram to the Xen drivers */
+-    if (def->virtType == VIR_DOMAIN_VIRT_XEN)
+-        return 0;
+-
+     switch (type) {
+     case VIR_DOMAIN_VIDEO_TYPE_VGA:
+     case VIR_DOMAIN_VIDEO_TYPE_CIRRUS:
+@@ -12152,8 +12154,6 @@ virDomainVideoDefParseXML(xmlNodePtr node,
+                            _("cannot parse video ram '%s'"), ram);
+             goto error;
+         }
+-    } else if (def->type == VIR_DOMAIN_VIDEO_TYPE_QXL) {
+-        def->ram = virDomainVideoDefaultRAM(dom, def->type);
+     }
+ 
+     if (vram) {
+@@ -12162,8 +12162,6 @@ virDomainVideoDefParseXML(xmlNodePtr node,
+                            _("cannot parse video vram '%s'"), vram);
+             goto error;
+         }
+-    } else {
+-        def->vram = virDomainVideoDefaultRAM(dom, def->type);
+     }
+ 
+     if (vram64) {
+@@ -18612,7 +18610,6 @@ virDomainDefAddImplicitVideo(virDomainDefPtr def)
+                        _("cannot determine default video type"));
+         goto cleanup;
+     }
+-    video->vram = virDomainVideoDefaultRAM(def, video->type);
+     video->heads = 1;
+     if (VIR_APPEND_ELEMENT(def->videos, def->nvideos, video) < 0)
+         goto cleanup;
+diff --git a/src/qemu/qemu_parse_command.c b/src/qemu/qemu_parse_command.c
+index 79f5b92..6dc597a 100644
+--- a/src/qemu/qemu_parse_command.c
++++ b/src/qemu/qemu_parse_command.c
+@@ -2585,9 +2585,7 @@ qemuParseCommandLine(virCapsPtr caps,
+             vid->type = VIR_DOMAIN_VIDEO_TYPE_XEN;
+         else
+             vid->type = video;
+-        vid->vram = virDomainVideoDefaultRAM(def, vid->type);
+         if (vid->type == VIR_DOMAIN_VIDEO_TYPE_QXL) {
+-            vid->ram = virDomainVideoDefaultRAM(def, vid->type);
+             vid->vgamem = QEMU_QXL_VGAMEM_DEFAULT;
+         } else {
+             vid->ram = 0;

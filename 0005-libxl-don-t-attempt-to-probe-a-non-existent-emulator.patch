@@ -1,0 +1,39 @@
+From: Jim Fehlig <jfehlig@suse.com>
+Date: Thu, 12 May 2016 14:40:28 -0600
+Subject: [PATCH] libxl: don't attempt to probe a non-existent emulator
+
+When probing the <emulator> with '-help' to determine if
+it is the old qemu, errors are reported if the emulator
+doesn't exist
+
+libvirt:  error : internal error: Child process
+(/usr/lib/xen/bin/qemu-dm -help) unexpected exit status 127:
+libvirt:  error : cannot execute binary /usr/lib/xen/bin/qemu-dm:
+No such file or directory
+
+Avoid the probe if the specified emulator doesn't exist,
+squelching the error. There is no behavior change since
+libxlDomainGetEmulatorType() would return
+LIBXL_DEVICE_MODEL_VERSION_QEMU_XEN if the probe failed
+via virCommandRun().
+
+Signed-off-by: Jim Fehlig <jfehlig@suse.com>
+(cherry picked from commit 400e716d7d8371fa718c27bb4f05b9a68929e64a)
+---
+ src/libxl/libxl_conf.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/src/libxl/libxl_conf.c b/src/libxl/libxl_conf.c
+index 30f2ce9..bcbb773 100644
+--- a/src/libxl/libxl_conf.c
++++ b/src/libxl/libxl_conf.c
+@@ -916,6 +916,9 @@ libxlDomainGetEmulatorType(const virDomainDef *def)
+ 
+     if (def->os.type == VIR_DOMAIN_OSTYPE_HVM) {
+         if (def->emulator) {
++            if (!virFileExists(def->emulator))
++                goto cleanup;
++
+             cmd = virCommandNew(def->emulator);
+ 
+             virCommandAddArgList(cmd, "-help", NULL);

@@ -1,0 +1,53 @@
+From: Cole Robinson <crobinso@redhat.com>
+Date: Fri, 20 May 2016 15:50:16 -0400
+Subject: [PATCH] spec: Advertise nvram paths of official fedora edk2 builds
+
+Fedora now ships edk2 firmware in its official repos, so adapt
+the nvram path list to match. Eventually we can remove the nightly
+links as well once some integration kinks have been worked out,
+and documentation updated.
+
+Move the macro building into the %build target, which lets us
+build up a shell variable and make things a bit more readable
+
+https://bugzilla.redhat.com/show_bug.cgi?id=1335395
+---
+ libvirt.spec.in | 18 ++++++++++++------
+ 1 file changed, 12 insertions(+), 6 deletions(-)
+
+diff --git a/libvirt.spec.in b/libvirt.spec.in
+index 935ca89..20aecf6 100644
+--- a/libvirt.spec.in
++++ b/libvirt.spec.in
+@@ -348,12 +348,6 @@
+ %endif
+ 
+ 
+-# Advertise OVMF and AAVMF from nightly firmware repo
+-%if 0%{?fedora}
+-    %define with_loader_nvram --with-loader-nvram="/usr/share/edk2.git/ovmf-x64/OVMF_CODE-pure-efi.fd:/usr/share/edk2.git/ovmf-x64/OVMF_VARS-pure-efi.fd:/usr/share/edk2.git/aarch64/QEMU_EFI-pflash.raw:/usr/share/edk2.git/aarch64/vars-template-pflash.raw"
+-%endif
+-
+-
+ # The RHEL-5 Xen package has some feature backports. This
+ # flag is set to enable use of those special bits on RHEL-5
+ %if 0%{?rhel} == 5
+@@ -1488,6 +1482,18 @@ rm -rf .git
+     %endif
+ %endif
+ 
++%if 0%{?fedora}
++    # Nightly firmware repo x86/OVMF
++    LOADERS="/usr/share/edk2.git/ovmf-x64/OVMF_CODE-pure-efi.fd:/usr/share/edk2.git/ovmf-x64/OVMF_VARS-pure-efi.fd"
++    # Nightly firmware repo aarch64/AAVMF
++    LOADERS="$LOADERS:/usr/share/edk2.git/aarch64/QEMU_EFI-pflash.raw:/usr/share/edk2.git/aarch64/vars-template-pflash.raw"
++    # Fedora official x86/OVMF
++    LOADERS="$LOADERS:/usr/share/edk2/ovmf/OVMF_CODE.fd:/usr/share/edk2/ovmf/OVMF_VARS.fd"
++    # Fedora official aarch64/AAVMF
++    LOADERS="$LOADERS:/usr/share/edk2/aarch64/QEMU_EFI-pflash.raw:/usr/share/edk2/aarch64/vars-template-pflash.raw"
++    %define with_loader_nvram --with-loader-nvram="$LOADERS"
++%endif
++
+ # place macros above and build commands below this comment
+ 
+ %if 0%{?enable_autotools}
