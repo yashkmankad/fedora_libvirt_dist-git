@@ -12,7 +12,7 @@
 # Default to skipping autoreconf.  Distros can change just this one line
 # (or provide a command-line override) if they backport any patches that
 # touch configure.ac or Makefile.am.
-%{!?enable_autotools:%global enable_autotools 0}
+%{!?enable_autotools:%global enable_autotools 1}
 
 
 # The hypervisor drivers that run in libvirtd
@@ -79,7 +79,6 @@
 %define with_firewalld     0%{!?_without_firewalld:0}
 %define with_libssh2       0%{!?_without_libssh2:0}
 %define with_wireshark     0%{!?_without_wireshark:0}
-%define with_systemd_daemon 0%{!?_without_systemd_daemon:0}
 %define with_pm_utils      1
 
 # Finally set the OS / architecture specific special cases
@@ -133,7 +132,6 @@
 # Fedora has systemd, libvirt still used sysvinit there.
 %if 0%{?fedora} || 0%{?rhel} >= 7
     %define with_systemd 1
-    %define with_systemd_daemon 1
     %define with_pm_utils 0
 %endif
 
@@ -222,6 +220,7 @@ URL: http://libvirt.org/
     %define mainturl stable_updates/
 %endif
 Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
+Patch1: 0001-systemd-directly-notify-systemd-instead-of-using-sd_.patch
 
 Requires: libvirt-daemon = %{version}-%{release}
 Requires: libvirt-daemon-config-network = %{version}-%{release}
@@ -267,9 +266,6 @@ BuildRequires: perl
 BuildRequires: python
 %if %{with_systemd}
 BuildRequires: systemd-units
-%endif
-%if %{with_systemd_daemon}
-BuildRequires: systemd-devel
 %endif
 %if %{with_xen} || %{with_libxl}
 BuildRequires: xen-devel
@@ -1061,12 +1057,6 @@ rm -rf .git
     %define arg_wireshark --without-wireshark-dissector
 %endif
 
-%if %{with_systemd_daemon}
-    %define arg_systemd_daemon --with-systemd-daemon
-%else
-    %define arg_systemd_daemon --without-systemd-daemon
-%endif
-
 %if %{with_pm_utils}
     %define arg_pm_utils --with-pm-utils
 %else
@@ -1157,7 +1147,6 @@ rm -f po/stamp-po
            --with-driver-modules \
            %{?arg_firewalld} \
            %{?arg_wireshark} \
-           %{?arg_systemd_daemon} \
            %{?arg_pm_utils} \
            --with-nss-plugin \
            %{arg_packager} \
