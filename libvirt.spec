@@ -210,7 +210,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 1.3.5
-Release: 1%{?dist}%{?extra_release}
+Release: 2%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -1838,6 +1838,10 @@ exit 0
 
 
 %changelog
+* Mon Jun 13 2016 Richard W.M. Jones <rjones@redhat.com> - 1.3.5-2
+- Rebuild against new glibc
+  (see https://lists.fedoraproject.org/archives/list/devel@lists.fedoraproject.org/thread/VUOTESHSWFRCYPXIVG6BSMAUITS7QCK2/).
+
 * Mon Jun  6 2016 Daniel P. Berrange <berrange@redhat.com> - 1.3.5-1
 - Rebase to version 1.3.5
 - Pull in refactored, simplified spec file from upstream
