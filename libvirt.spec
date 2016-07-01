@@ -167,7 +167,8 @@
 %endif
 
 # Enable wireshark plugins for all distros shipping libvirt 1.2.2 or newer
-%if 0%{?fedora} >= 21
+# Temp disabled due to https://bugzilla.redhat.com/show_bug.cgi?id=1351984
+%if 0%{?fedora-disabled} >= 21
     %define with_wireshark 0%{!?_without_wireshark:1}
 %endif
 
@@ -1853,6 +1854,7 @@ exit 0
 %changelog
 * Fri Jul  1 2016 Daniel P. Berrange <berrange@redhat.com> - 2.0.0-1
 - Rebase to version 2.0.0
+- Temporarily disable wireshark plugin due to broken wireshark headers (rhbz #1351984)
 
 * Mon Jun 13 2016 Richard W.M. Jones <rjones@redhat.com> - 1.3.5-2
 - Rebuild against new glibc
