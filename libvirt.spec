@@ -12,7 +12,7 @@
 # Default to skipping autoreconf.  Distros can change just this one line
 # (or provide a command-line override) if they backport any patches that
 # touch configure.ac or Makefile.am.
-%{!?enable_autotools:%global enable_autotools 1}
+%{!?enable_autotools:%global enable_autotools 0}
 
 
 # The hypervisor drivers that run in libvirtd
@@ -206,11 +206,17 @@
     %define enable_werror --disable-werror
 %endif
 
+%if 0%{?fedora} >= 21
+    %define tls_priority "@SYSTEM"
+%else
+    %define tls_priority "NORMAL"
+%endif
+
 
 Summary: Library providing a simple virtualization API
 Name: libvirt
-Version: 1.3.5
-Release: 2%{?dist}%{?extra_release}
+Version: 2.0.0
+Release: 1%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -219,8 +225,7 @@ URL: http://libvirt.org/
 %if %(echo %{version} | grep -o \\. | wc -l) == 3
     %define mainturl stable_updates/
 %endif
-Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
-Patch1: 0001-systemd-directly-notify-systemd-instead-of-using-sd_.patch
+Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.xz
 
 Requires: libvirt-daemon = %{version}-%{release}
 Requires: libvirt-daemon-config-network = %{version}-%{release}
@@ -297,7 +302,11 @@ BuildRequires: yajl-devel
 BuildRequires: sanlock-devel >= 2.4
 %endif
 BuildRequires: libpcap-devel
+%if 0%{?rhel} && 0%{?rhel} < 7
+BuildRequires: libnl-devel
+%else
 BuildRequires: libnl3-devel
+%endif
 BuildRequires: avahi-devel
 BuildRequires: libselinux-devel
 BuildRequires: dnsmasq >= 2.41
@@ -602,6 +611,7 @@ Group: Development/Libraries
 Requires: libvirt-daemon = %{version}-%{release}
 # There really is a hard cross-driver dependency here
 Requires: libvirt-daemon-driver-network = %{version}-%{release}
+Requires: libvirt-daemon-driver-storage = %{version}-%{release}
 Requires: /usr/bin/qemu-img
 # For image compression
 Requires: gzip
@@ -1153,6 +1163,7 @@ rm -f po/stamp-po
            %{arg_packager_version} \
            --with-qemu-user=%{qemu_user} \
            --with-qemu-group=%{qemu_group} \
+           --with-tls-priority=%{tls_priority} \
            %{?arg_loader_nvram} \
            %{?enable_werror} \
            --enable-expensive-tests \
@@ -1181,12 +1192,6 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/wireshark/plugins/*/libvirt.la
 mv $RPM_BUILD_ROOT%{_libdir}/wireshark/plugins/*/libvirt.so \
    $RPM_BUILD_ROOT%{_libdir}/wireshark/plugins/libvirt.so
 %endif
-
-# Temporarily get rid of not-installed admin-related files
-rm -f $RPM_BUILD_ROOT%{_libdir}/libvirt-admin.so
-rm -f $RPM_BUILD_ROOT%{_bindir}/virt-admin
-rm -f $RPM_BUILD_ROOT%{_mandir}/man1/virt-admin.1*
-rm -f $RPM_BUILD_ROOT%{_sysconfdir}/libvirt/libvirt-admin.conf
 
 install -d -m 0755 $RPM_BUILD_ROOT%{_datadir}/lib/libvirt/dnsmasq/
 # We don't want to install /etc/libvirt/qemu/networks in the main %files list
@@ -1529,6 +1534,7 @@ exit 0
 %doc examples/xml
 %doc examples/rename
 %doc examples/systemtap
+%doc examples/admin
 
 
 %files daemon
@@ -1739,11 +1745,14 @@ exit 0
 %doc COPYING COPYING.LESSER
 
 %config(noreplace) %{_sysconfdir}/libvirt/libvirt.conf
+%config(noreplace) %{_sysconfdir}/libvirt/libvirt-admin.conf
 %{_mandir}/man1/virsh.1*
+%{_mandir}/man1/virt-admin.1*
 %{_mandir}/man1/virt-xml-validate.1*
 %{_mandir}/man1/virt-pki-validate.1*
 %{_mandir}/man1/virt-host-validate.1*
 %{_bindir}/virsh
+%{_bindir}/virt-admin
 %{_bindir}/virt-xml-validate
 %{_bindir}/virt-pki-validate
 %{_bindir}/virt-host-validate
@@ -1806,11 +1815,13 @@ exit 0
 
 %files devel
 %{_libdir}/libvirt.so
+%{_libdir}/libvirt-admin.so
 %{_libdir}/libvirt-qemu.so
 %{_libdir}/libvirt-lxc.so
 %dir %{_includedir}/libvirt
 %{_includedir}/libvirt/virterror.h
 %{_includedir}/libvirt/libvirt.h
+%{_includedir}/libvirt/libvirt-admin.h
 %{_includedir}/libvirt/libvirt-common.h
 %{_includedir}/libvirt/libvirt-domain.h
 %{_includedir}/libvirt/libvirt-domain-snapshot.h
@@ -1826,11 +1837,13 @@ exit 0
 %{_includedir}/libvirt/libvirt-qemu.h
 %{_includedir}/libvirt/libvirt-lxc.h
 %{_libdir}/pkgconfig/libvirt.pc
+%{_libdir}/pkgconfig/libvirt-admin.pc
 %{_libdir}/pkgconfig/libvirt-qemu.pc
 %{_libdir}/pkgconfig/libvirt-lxc.pc
 
 %dir %{_datadir}/libvirt/api/
 %{_datadir}/libvirt/api/libvirt-api.xml
+%{_datadir}/libvirt/api/libvirt-admin-api.xml
 %{_datadir}/libvirt/api/libvirt-qemu-api.xml
 %{_datadir}/libvirt/api/libvirt-lxc-api.xml
 # Needed building python bindings
@@ -1838,6 +1851,9 @@ exit 0
 
 
 %changelog
+* Fri Jul  1 2016 Daniel P. Berrange <berrange@redhat.com> - 2.0.0-1
+- Rebase to version 2.0.0
+
 * Mon Jun 13 2016 Richard W.M. Jones <rjones@redhat.com> - 1.3.5-2
 - Rebuild against new glibc
   (see https://lists.fedoraproject.org/archives/list/devel@lists.fedoraproject.org/thread/VUOTESHSWFRCYPXIVG6BSMAUITS7QCK2/).

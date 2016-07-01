@@ -2,4 +2,4 @@
 *.rpm
 i686
 x86_64
-libvirt-*.tar.gz
+libvirt-*.tar.xz
