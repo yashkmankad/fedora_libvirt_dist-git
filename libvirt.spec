@@ -217,7 +217,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 2.0.0
-Release: 1%{?dist}%{?extra_release}
+Release: 2%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -1858,6 +1858,10 @@ exit 0
 
 
 %changelog
+* Sat Jul 23 2016 Richard W.M. Jones <rjones@redhat.com> - 2.0.0-2
+- Rebuild to attempt to fix 'nothing provides libxenctrl.so.4.6()(64bit) needed
+  by libvirt-daemon-2.0.0-1.fc25.x86_64'
+
 * Fri Jul  1 2016 Daniel P. Berrange <berrange@redhat.com> - 2.0.0-1
 - Rebase to version 2.0.0
 - Temporarily disable wireshark plugin due to broken wireshark headers (rhbz #1351984)
