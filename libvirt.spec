@@ -167,8 +167,7 @@
 %endif
 
 # Enable wireshark plugins for all distros shipping libvirt 1.2.2 or newer
-# Temp disabled due to https://bugzilla.redhat.com/show_bug.cgi?id=1351984
-%if 0%{?fedora-disabled} >= 21
+%if 0%{?fedora} >= 21
     %define with_wireshark 0%{!?_without_wireshark:1}
 %endif
 
@@ -216,8 +215,8 @@
 
 Summary: Library providing a simple virtualization API
 Name: libvirt
-Version: 2.0.0
-Release: 2%{?dist}%{?extra_release}
+Version: 2.1.0
+Release: 1%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -257,6 +256,7 @@ Requires: libvirt-daemon-driver-storage = %{version}-%{release}
 Requires: libvirt-daemon-driver-network = %{version}-%{release}
 Requires: libvirt-daemon-driver-nodedev = %{version}-%{release}
 Requires: libvirt-client = %{version}-%{release}
+Requires: libvirt-libs = %{version}-%{release}
 
 # All build-time requirements. Run-time requirements are
 # listed against each sub-RPM
@@ -406,7 +406,11 @@ BuildRequires: numad
 %endif
 
 %if %{with_wireshark}
-BuildRequires: wireshark-devel
+    %if 0%{fedora} >= 24
+BuildRequires: wireshark-devel >= 2.1.0
+    %else
+BuildRequires: wireshark-devel >= 1.12.1
+    %endif
 %endif
 
 Provides: bundled(gnulib)
@@ -431,8 +435,8 @@ Group: Development/Libraries
 # All runtime requirements for the libvirt package (runtime requrements
 # for subpackages are listed later in those subpackages)
 
-# The client side, i.e. shared libs and virsh are in a subpackage
-Requires: %{name}-client = %{version}-%{release}
+# The client side, i.e. shared libs are in a subpackage
+Requires: %{name}-libs = %{version}-%{release}
 
 # for modprobe of pci devices
 Requires: module-init-tools
@@ -619,9 +623,9 @@ Requires: gzip
 Requires: bzip2
 Requires: lzop
 Requires: xz
-%if 0%{?fedora} >= 24
+    %if 0%{?fedora} >= 24
 Requires: systemd-container
-%endif
+    %endif
 
 %description daemon-driver-qemu
 The qemu driver plugin for the libvirtd daemon, providing
@@ -637,9 +641,9 @@ Group: Development/Libraries
 Requires: libvirt-daemon = %{version}-%{release}
 # There really is a hard cross-driver dependency here
 Requires: libvirt-daemon-driver-network = %{version}-%{release}
-%if 0%{?fedora} >= 24
+    %if 0%{?fedora} >= 24
 Requires: systemd-container
-%endif
+    %endif
 
 %description daemon-driver-lxc
 The LXC driver plugin for the libvirtd daemon, providing
@@ -829,13 +833,11 @@ capabilities of VirtualBox
 %endif
 
 %package client
-Summary: Client side library and utilities of the libvirt library
+Summary: Client side utilities of the libvirt library
 Group: Development/Libraries
+Requires: %{name}-libs = %{version}-%{release}
 Requires: readline
 Requires: ncurses
-# So remote clients can access libvirt over SSH tunnel
-# (client invokes 'nc' against the UNIX socket on the server)
-Requires: nc
 # Needed by /usr/libexec/libvirt-guests.sh script.
 Requires: gettext
 # Needed by virt-pki-validate script.
@@ -844,21 +846,40 @@ Requires: gnutls-utils
 # Needed for probing the power management features of the host.
 Requires: pm-utils
 %endif
+
+%description client
+The client binaries needed to access the virtualization
+capabilities of recent versions of Linux (and other OSes).
+
+%package libs
+Summary: Client side libraries
+Group: Development/Libraries
+# So remote clients can access libvirt over SSH tunnel
+# (client invokes 'nc' against the UNIX socket on the server)
+Requires: nc
 Requires: cyrus-sasl
 # Not technically required, but makes 'out-of-box' config
 # work correctly & doesn't have onerous dependencies
 Requires: cyrus-sasl-md5
 
-%description client
-Shared libraries and client binaries needed to access to the
-virtualization capabilities of recent versions of Linux (and other OSes).
+%description libs
+Shared libraries for accessing the libvirt daemon.
+
+%package admin
+Summary: Set of tools to control libvirt daemon
+Group: Development/Libraries
+Requires: %{name}-libs = %{version}-%{release}
+Requires: readline
+
+%description admin
+The client side utilities to control the libvirt daemon.
 
 %if %{with_wireshark}
 %package wireshark
 Summary: Wireshark dissector plugin for libvirt RPC transactions
 Group: Development/Libraries
 Requires: wireshark >= 1.12.6-4
-Requires: %{name}-client = %{version}-%{release}
+Requires: %{name}-libs = %{version}-%{release}
 
 %description wireshark
 Wireshark dissector plugin for better analysis of libvirt RPC traffic.
@@ -868,7 +889,7 @@ Wireshark dissector plugin for better analysis of libvirt RPC traffic.
 %package login-shell
 Summary: Login shell for connecting users to an LXC container
 Group: Development/Libraries
-Requires: %{name}-client = %{version}-%{release}
+Requires: %{name}-libs = %{version}-%{release}
 
 %description login-shell
 Provides the set-uid virt-login-shell binary that is used to
@@ -879,7 +900,7 @@ namespaces.
 %package devel
 Summary: Libraries, includes, etc. to compile with the libvirt library
 Group: Development/Libraries
-Requires: %{name}-client = %{version}-%{release}
+Requires: %{name}-libs = %{version}-%{release}
 Requires: pkgconfig
 
 %description devel
@@ -893,7 +914,7 @@ Requires: sanlock >= 2.4
 #for virt-sanlock-cleanup require augeas
 Requires: augeas
 Requires: %{name}-daemon = %{version}-%{release}
-Requires: %{name}-client = %{version}-%{release}
+Requires: %{name}-libs = %{version}-%{release}
 
 %description lock-sanlock
 Includes the Sanlock lock manager plugin for the QEMU
@@ -1195,9 +1216,13 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libvirt/lock-driver/*.a
 rm -f $RPM_BUILD_ROOT%{_libdir}/libvirt/connection-driver/*.la
 rm -f $RPM_BUILD_ROOT%{_libdir}/libvirt/connection-driver/*.a
 %if %{with_wireshark}
+    %if 0%{fedora} >= 24
+rm -f $RPM_BUILD_ROOT%{_libdir}/wireshark/plugins/libvirt.la
+    %else
 rm -f $RPM_BUILD_ROOT%{_libdir}/wireshark/plugins/*/libvirt.la
 mv $RPM_BUILD_ROOT%{_libdir}/wireshark/plugins/*/libvirt.so \
-   $RPM_BUILD_ROOT%{_libdir}/wireshark/plugins/libvirt.so
+      $RPM_BUILD_ROOT%{_libdir}/wireshark/plugins/libvirt.so
+    %endif
 %endif
 
 install -d -m 0755 $RPM_BUILD_ROOT%{_datadir}/lib/libvirt/dnsmasq/
@@ -1748,32 +1773,40 @@ exit 0
 %attr(0755, root, root) %{_libexecdir}/libvirt_sanlock_helper
 %endif
 
-%files client -f %{name}.lang
-%doc COPYING COPYING.LESSER
-
-%config(noreplace) %{_sysconfdir}/libvirt/libvirt.conf
-%config(noreplace) %{_sysconfdir}/libvirt/libvirt-admin.conf
+%files client
 %{_mandir}/man1/virsh.1*
-%{_mandir}/man1/virt-admin.1*
 %{_mandir}/man1/virt-xml-validate.1*
 %{_mandir}/man1/virt-pki-validate.1*
 %{_mandir}/man1/virt-host-validate.1*
 %{_bindir}/virsh
-%{_bindir}/virt-admin
 %{_bindir}/virt-xml-validate
 %{_bindir}/virt-pki-validate
 %{_bindir}/virt-host-validate
-%{_libdir}/libvirt.so.*
-%{_libdir}/libvirt-qemu.so.*
-%{_libdir}/libvirt-lxc.so.*
-%{_libdir}/libvirt-admin.so.*
 
 %{_datadir}/systemtap/tapset/libvirt_probes*.stp
 %{_datadir}/systemtap/tapset/libvirt_qemu_probes*.stp
 %{_datadir}/systemtap/tapset/libvirt_functions.stp
 
+
+%if %{with_systemd}
+%{_unitdir}/libvirt-guests.service
+%else
+%{_sysconfdir}/rc.d/init.d/libvirt-guests
+%endif
+%config(noreplace) %{_sysconfdir}/sysconfig/libvirt-guests
+%attr(0755, root, root) %{_libexecdir}/libvirt-guests.sh
+
+%files libs -f %{name}.lang
+%doc COPYING COPYING.LESSER
+%config(noreplace) %{_sysconfdir}/libvirt/libvirt.conf
+%config(noreplace) %{_sysconfdir}/libvirt/libvirt-admin.conf
+%{_libdir}/libvirt.so.*
+%{_libdir}/libvirt-qemu.so.*
+%{_libdir}/libvirt-lxc.so.*
+%{_libdir}/libvirt-admin.so.*
 %dir %{_datadir}/libvirt/
 %dir %{_datadir}/libvirt/schemas/
+%dir %attr(0755, root, root) %{_localstatedir}/lib/libvirt/
 
 %{_datadir}/libvirt/schemas/basictypes.rng
 %{_datadir}/libvirt/schemas/capability.rng
@@ -1794,16 +1827,12 @@ exit 0
 %{_datadir}/libvirt/cpu_map.xml
 %{_datadir}/libvirt/libvirtLogo.png
 
-%if %{with_systemd}
-%{_unitdir}/libvirt-guests.service
-%else
-%{_sysconfdir}/rc.d/init.d/libvirt-guests
-%endif
-%config(noreplace) %{_sysconfdir}/sysconfig/libvirt-guests
-%attr(0755, root, root) %{_libexecdir}/libvirt-guests.sh
-%dir %attr(0755, root, root) %{_localstatedir}/lib/libvirt/
-
 %config(noreplace) %{_sysconfdir}/sasl2/libvirt.conf
+
+%files admin
+%{_mandir}/man1/virt-admin.1*
+%{_bindir}/virt-admin
+
 
 %if %{with_wireshark}
 %files wireshark
@@ -1858,6 +1887,9 @@ exit 0
 
 
 %changelog
+* Tue Aug  2 2016 Daniel P. Berrange <berrange@redhat.com> - 2.1.0-1
+- Rebase to version 2.1.0
+
 * Sat Jul 23 2016 Richard W.M. Jones <rjones@redhat.com> - 2.0.0-2
 - Rebuild to attempt to fix 'nothing provides libxenctrl.so.4.6()(64bit) needed
   by libvirt-daemon-2.0.0-1.fc25.x86_64'
