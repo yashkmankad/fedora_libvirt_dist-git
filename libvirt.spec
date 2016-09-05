@@ -206,16 +206,20 @@
     %define enable_werror --disable-werror
 %endif
 
-%if 0%{?fedora} >= 21
-    %define tls_priority "@SYSTEM"
+%if 0%{?fedora} >= 25
+    %define tls_priority "@LIBVIRT,SYSTEM"
 %else
-    %define tls_priority "NORMAL"
+    %if 0%{?fedora} >= 21
+        %define tls_priority "@SYSTEM"
+    %else
+        %define tls_priority "NORMAL"
+    %endif
 %endif
 
 
 Summary: Library providing a simple virtualization API
 Name: libvirt
-Version: 2.1.0
+Version: 2.2.0
 Release: 1%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
@@ -1887,6 +1891,9 @@ exit 0
 
 
 %changelog
+* Mon Sep  5 2016 Daniel P. Berrange <berrange@redhat.com> - 2.2.0-1
+- Rebase to version 2.2.0
+
 * Tue Aug  2 2016 Daniel P. Berrange <berrange@redhat.com> - 2.1.0-1
 - Rebase to version 2.1.0
 
