@@ -219,7 +219,7 @@
 
 Summary: Library providing a simple virtualization API
 Name: libvirt
-Version: 2.2.0
+Version: 2.3.0
 Release: 1%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
@@ -1814,6 +1814,7 @@ exit 0
 
 %{_datadir}/libvirt/schemas/basictypes.rng
 %{_datadir}/libvirt/schemas/capability.rng
+%{_datadir}/libvirt/schemas/cputypes.rng
 %{_datadir}/libvirt/schemas/domain.rng
 %{_datadir}/libvirt/schemas/domaincaps.rng
 %{_datadir}/libvirt/schemas/domaincommon.rng
@@ -1891,6 +1892,9 @@ exit 0
 
 
 %changelog
+* Thu Oct  6 2016 Daniel P. Berrange <berrange@redhat.com> - 2.3.0-1
+- Rebase to version 2.3.0
+
 * Mon Sep  5 2016 Daniel P. Berrange <berrange@redhat.com> - 2.2.0-1
 - Rebase to version 2.2.0
 
