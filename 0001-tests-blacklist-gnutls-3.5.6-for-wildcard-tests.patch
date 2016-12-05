@@ -1,0 +1,47 @@
+From 93c2b9d2f01e878ed86566620130089aba61580f Mon Sep 17 00:00:00 2001
+From: "Daniel P. Berrange" <berrange@redhat.com>
+Date: Mon, 5 Dec 2016 11:47:04 +0000
+Subject: [PATCH] tests: blacklist gnutls 3.5.6 for wildcard tests
+
+GNUTLS 3.5.6 broke wildcard support by reversing the
+fields in the reported dname. This regression will
+be fixed in 3.5.7, so rather than workaround it in
+libvirt we just blacklist that version
+
+ https://lists.gnupg.org/pipermail/gnutls-devel/2016-November/008224.html
+
+Signed-off-by: Daniel P. Berrange <berrange@redhat.com>
+---
+ tests/virnettlssessiontest.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/tests/virnettlssessiontest.c b/tests/virnettlssessiontest.c
+index 0d2e106..b146072 100644
+--- a/tests/virnettlssessiontest.c
++++ b/tests/virnettlssessiontest.c
+@@ -374,6 +374,14 @@ mymain(void)
+     DO_SESS_TEST(cacertreq.filename, servercertalt2req.filename, clientcertreq.filename,
+                  false, false, "wiki.libvirt.org", NULL);
+ 
++#if GNUTLS_VERSION_NUMBER != 0x030506
++    /*
++     * GNUTLS 3.5.6 broke wildcard support by reversing the
++     * fields in the reported dname. This regression will
++     * be fixed in 3.5.7, so rather than workaround it in
++     * libvirt we just blacklist that version
++     * https://lists.gnupg.org/pipermail/gnutls-devel/2016-November/008224.html
++     */
+     const char *const wildcards1[] = {
+         "C=UK,CN=dogfood",
+         NULL,
+@@ -412,6 +420,7 @@ mymain(void)
+                  false, false, "libvirt.org", wildcards5);
+     DO_SESS_TEST(cacertreq.filename, servercertreq.filename, clientcertreq.filename,
+                  false, false, "libvirt.org", wildcards6);
++#endif
+ 
+     TLS_ROOT_REQ(cacertrootreq,
+                  "UK", "libvirt root", NULL, NULL, NULL, NULL,
+-- 
+2.9.3
+

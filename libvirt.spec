@@ -237,6 +237,10 @@ URL: http://libvirt.org/
     %define mainturl stable_updates/
 %endif
 Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.xz
+# Temporarily disable wildcard tests due to gnutls 3.5.6
+# regression. Remove when gnutls 3.5.7 arrives
+# https://bugzilla.redhat.com/show_bug.cgi?id=1394318
+Patch1: 0001-tests-blacklist-gnutls-3.5.6-for-wildcard-tests.patch
 
 Requires: libvirt-daemon = %{version}-%{release}
 Requires: libvirt-daemon-config-network = %{version}-%{release}
