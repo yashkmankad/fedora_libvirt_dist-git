@@ -419,6 +419,9 @@ BuildRequires: numad
 %if %{with_wireshark}
     %if 0%{fedora} >= 24
 BuildRequires: wireshark-devel >= 2.1.0
+# Temp hack for F25/rawhide due to broken wireshark-devel deps
+# https://bugzilla.redhat.com/show_bug.cgi?id=1401463
+BuildRequires: qt-devel glib2-devel
     %else
 BuildRequires: wireshark-devel >= 1.12.1
     %endif
