@@ -227,7 +227,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 2.5.0
-Release: 1%{?dist}%{?extra_release}
+Release: 2%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -1909,6 +1909,9 @@ exit 0
 
 
 %changelog
+* Thu Dec  8 2016 Daniel P. Berrange <berrange@redhat.com> - 2.5.0-2
+- Rebuild to pick up new libxen* soname
+
 * Mon Dec  5 2016 Daniel P. Berrange <berrange@redhat.com> - 2.5.0-1
 - Rebase to version 2.5.0
 
