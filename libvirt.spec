@@ -226,8 +226,8 @@
 
 Summary: Library providing a simple virtualization API
 Name: libvirt
-Version: 2.5.0
-Release: 3%{?dist}%{?extra_release}
+Version: 3.0.0
+Release: 1%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -237,10 +237,9 @@ URL: http://libvirt.org/
     %define mainturl stable_updates/
 %endif
 Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.xz
-# Temporarily disable wildcard tests due to gnutls 3.5.6
-# regression. Remove when gnutls 3.5.7 arrives
-# https://bugzilla.redhat.com/show_bug.cgi?id=1394318
-Patch1: 0001-tests-blacklist-gnutls-3.5.6-for-wildcard-tests.patch
+# Temporarily disable namespaces due to various regressions
+# they cause
+Patch1: 0001-Disable-use-of-namespaces-by-default.patch
 
 Requires: libvirt-daemon = %{version}-%{release}
 Requires: libvirt-daemon-config-network = %{version}-%{release}
@@ -1849,6 +1848,8 @@ exit 0
 
 %{_datadir}/libvirt/cpu_map.xml
 
+%{_datadir}/libvirt/test-screenshot.png
+
 %config(noreplace) %{_sysconfdir}/sasl2/libvirt.conf
 
 %files admin
@@ -1863,6 +1864,7 @@ exit 0
 
 %files nss
 %{_libdir}/libnss_libvirt.so.2
+%{_libdir}/libnss_libvirt_guest.so.2
 
 %if %{with_lxc}
 %files login-shell
@@ -1909,6 +1911,9 @@ exit 0
 
 
 %changelog
+* Thu Jan 19 2017 Daniel P. Berrange <berrange@redhat.com> - 3.0.0-1
+- Rebase to version 3.0.0
+
 * Thu Jan 12 2017 Igor Gnatenko <ignatenko@redhat.com> - 2.5.0-3
 - Rebuild for readline 7.x
 
