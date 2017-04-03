@@ -226,7 +226,7 @@
 
 Summary: Library providing a simple virtualization API
 Name: libvirt
-Version: 3.1.0
+Version: 3.2.0
 Release: 1%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
@@ -735,7 +735,7 @@ parted and more.
 
 %if %{with_qemu}
 %package daemon-driver-qemu
-Summary: Qemu driver plugin for the libvirtd daemon
+Summary: QEMU driver plugin for the libvirtd daemon
 Group: Development/Libraries
 Requires: libvirt-daemon = %{version}-%{release}
 # There really is a hard cross-driver dependency here
@@ -982,9 +982,9 @@ Group: Development/Libraries
 # (client invokes 'nc' against the UNIX socket on the server)
 Requires: nc
 Requires: cyrus-sasl
-# Not technically required, but makes 'out-of-box' config
-# work correctly & doesn't have onerous dependencies
-Requires: cyrus-sasl-md5
+# Needed by default sasl.conf - no onerous extra deps, since
+# 100's of other things on a system already pull in krb5-libs
+Requires: cyrus-sasl-gssapi
 
 %description libs
 Shared libraries for accessing the libvirt daemon.
@@ -2052,6 +2052,9 @@ exit 0
 
 
 %changelog
+* Mon Apr  3 2017 Daniel P. Berrange <berrange@redhat.com> - 3.2.0-1
+- Rebase to version 3.2.0
+
 * Fri Mar  3 2017 Daniel P. Berrange <berrange@redhat.com> - 3.1.0-1
 - Rebase to version 3.1.0
 
