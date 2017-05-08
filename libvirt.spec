@@ -226,7 +226,7 @@
 
 Summary: Library providing a simple virtualization API
 Name: libvirt
-Version: 3.2.0
+Version: 3.3.0
 Release: 1%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
@@ -421,9 +421,6 @@ BuildRequires: numad
 %if %{with_wireshark}
     %if 0%{fedora} >= 24
 BuildRequires: wireshark-devel >= 2.1.0
-# Temp hack for F25/rawhide due to broken wireshark-devel deps
-# https://bugzilla.redhat.com/show_bug.cgi?id=1401463
-BuildRequires: qt-devel glib2-devel
     %else
 BuildRequires: wireshark-devel >= 1.12.1
     %endif
@@ -1363,6 +1360,13 @@ cp $RPM_BUILD_ROOT%{_sysconfdir}/libvirt/qemu/networks/default.xml \
    $RPM_BUILD_ROOT%{_datadir}/libvirt/networks/default.xml
 rm -f $RPM_BUILD_ROOT%{_sysconfdir}/libvirt/qemu/networks/default.xml
 rm -f $RPM_BUILD_ROOT%{_sysconfdir}/libvirt/qemu/networks/autostart/default.xml
+
+# nwfilter files are installed in /usr/share/libvirt and copied to /etc in %post
+# to avoid verification errors on changed files in /etc
+install -d -m 0755 $RPM_BUILD_ROOT%{_datadir}/libvirt/nwfilter/
+cp -a $RPM_BUILD_ROOT%{_sysconfdir}/libvirt/nwfilter/*.xml \
+    $RPM_BUILD_ROOT%{_datadir}/libvirt/nwfilter/
+
 # Strip auto-generated UUID - we need it generated per-install
 sed -i -e "/<uuid>/d" $RPM_BUILD_ROOT%{_datadir}/libvirt/networks/default.xml
 %if ! %{with_qemu}
@@ -1589,6 +1593,17 @@ if test $1 -eq 1 && test ! -f %{_sysconfdir}/libvirt/qemu/networks/default.xml ;
 
 fi
 
+
+%post daemon-config-nwfilter
+cp %{_datadir}/libvirt/nwfilter/*.xml %{_sysconfdir}/libvirt/nwfilter/
+# Make sure libvirt picks up the new nwfilter defininitons
+%if %{with_systemd}
+    /bin/systemctl try-restart libvirtd.service >/dev/null 2>&1 ||:
+%else
+    /sbin/service libvirtd condrestart > /dev/null 2>&1 || :
+%endif
+
+
 %if %{with_systemd}
 %triggerun -- libvirt < 0.9.4
 %{_bindir}/systemd-sysv-convert --save libvirtd >/dev/null 2>&1 ||:
@@ -1762,6 +1777,7 @@ exit 0
 %{_mandir}/man8/libvirtd.8*
 %{_mandir}/man8/virtlogd.8*
 %{_mandir}/man8/virtlockd.8*
+%{_mandir}/man7/virkey*.7*
 
 %doc examples/polkit/*.rules
 
@@ -1770,7 +1786,9 @@ exit 0
 %{_datadir}/libvirt/networks/default.xml
 
 %files daemon-config-nwfilter
-%{_sysconfdir}/libvirt/nwfilter/*.xml
+%dir %{_datadir}/libvirt/nwfilter/
+%{_datadir}/libvirt/nwfilter/*.xml
+%ghost %{_sysconfdir}/libvirt/nwfilter/*.xml
 
 %files daemon-driver-interface
 %{_libdir}/%{name}/connection-driver/libvirt_driver_interface.so
@@ -2052,6 +2070,9 @@ exit 0
 
 
 %changelog
+* Mon May  8 2017 Daniel P. Berrange <berrange@redhat.com> - 3.3.0-1
+- Rebase to version 3.3.0
+
 * Mon Apr  3 2017 Daniel P. Berrange <berrange@redhat.com> - 3.2.0-1
 - Rebase to version 3.2.0
 
