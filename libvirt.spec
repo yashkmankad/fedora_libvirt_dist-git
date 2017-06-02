@@ -226,17 +226,17 @@
 
 Summary: Library providing a simple virtualization API
 Name: libvirt
-Version: 3.3.0
+Version: 3.4.0
 Release: 1%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
-URL: http://libvirt.org/
+URL: https://libvirt.org/
 
-%if %(echo %{version} | grep -o \\. | wc -l) == 3
+%if %(echo %{version} | grep -q "\.0$"; echo $?) == 1
     %define mainturl stable_updates/
 %endif
-Source: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.xz
+Source: https://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.xz
 
 Requires: libvirt-daemon = %{version}-%{release}
 Requires: libvirt-daemon-config-network = %{version}-%{release}
@@ -359,7 +359,7 @@ BuildRequires: parted-devel
 # For Multipath support
 BuildRequires: device-mapper-devel
 %if %{with_storage_rbd}
-    %if 0%{?rhel} >= 7
+    %if 0%{?fedora} || 0%{?rhel} >= 7
 BuildRequires: librados2-devel
 BuildRequires: librbd1-devel
     %else
@@ -2070,6 +2070,9 @@ exit 0
 
 
 %changelog
+* Fri Jun  2 2017 Daniel P. Berrange <berrange@redhat.com> - 3.4.0-1
+- Rebase to version 3.4.0
+
 * Mon May  8 2017 Daniel P. Berrange <berrange@redhat.com> - 3.3.0-1
 - Rebase to version 3.3.0
 
