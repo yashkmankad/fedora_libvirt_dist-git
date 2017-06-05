@@ -1,0 +1,55 @@
+From fc18d751a71ff42461153eaacc57948e5771dd76 Mon Sep 17 00:00:00 2001
+From: rpm-build <rpm-build>
+Date: Mon, 5 Jun 2017 11:10:49 +0100
+Subject: [PATCH] Fix gnulib header clash against glibc system headers
+
+---
+ gnulib/lib/getopt-core.h | 6 +++---
+ gnulib/lib/getopt-ext.h  | 6 +++---
+ 2 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/gnulib/lib/getopt-core.h b/gnulib/lib/getopt-core.h
+index 8c9eb51..cab3412 100644
+--- a/gnulib/lib/getopt-core.h
++++ b/gnulib/lib/getopt-core.h
+@@ -17,8 +17,8 @@
+    License along with the GNU C Library; if not, see
+    <http://www.gnu.org/licenses/>.  */
+ 
+-#ifndef _GETOPT_CORE_H
+-#define _GETOPT_CORE_H 1
++#ifndef _GL_GETOPT_CORE_H
++#define _GL_GETOPT_CORE_H 1
+ 
+ /* This header should not be used directly; include getopt.h or
+    unistd.h instead.  Unlike most bits headers, it does not have
+@@ -93,4 +93,4 @@ extern int getopt (int ___argc, char *const *___argv, const char *__shortopts)
+ 
+ __END_DECLS
+ 
+-#endif /* _GETOPT_CORE_H */
++#endif /* _GL_GETOPT_CORE_H */
+diff --git a/gnulib/lib/getopt-ext.h b/gnulib/lib/getopt-ext.h
+index 94190df..0ded089 100644
+--- a/gnulib/lib/getopt-ext.h
++++ b/gnulib/lib/getopt-ext.h
+@@ -17,8 +17,8 @@
+    License along with the GNU C Library; if not, see
+    <http://www.gnu.org/licenses/>.  */
+ 
+-#ifndef _GETOPT_EXT_H
+-#define _GETOPT_EXT_H 1
++#ifndef _GL_GETOPT_EXT_H
++#define _GL_GETOPT_EXT_H 1
+ 
+ /* This header should not be used directly; include getopt.h instead.
+    Unlike most bits headers, it does not have a protective #error,
+@@ -74,4 +74,4 @@ extern int getopt_long_only (int ___argc, char *__getopt_argv_const *___argv,
+ 
+ __END_DECLS
+ 
+-#endif /* _GETOPT_EXT_H */
++#endif /* _GL_GETOPT_EXT_H */
+-- 
+2.9.3
+
