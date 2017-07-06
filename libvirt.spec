@@ -226,7 +226,7 @@
 
 Summary: Library providing a simple virtualization API
 Name: libvirt
-Version: 3.4.0
+Version: 3.5.0
 Release: 1%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
@@ -2071,6 +2071,9 @@ exit 0
 
 
 %changelog
+* Thu Jul  6 2017 Daniel P. Berrange <berrange@redhat.com> - 3.5.0-1
+- Rebase to version 3.5.0
+
 * Fri Jun  2 2017 Daniel P. Berrange <berrange@redhat.com> - 3.4.0-1
 - Rebase to version 3.4.0
 
