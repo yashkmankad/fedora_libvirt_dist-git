@@ -280,7 +280,7 @@ BuildRequires: libtool
 BuildRequires: /usr/bin/pod2man
 %endif
 BuildRequires: git
-BuildRequires: perl
+BuildRequires: perl-interpreter
 BuildRequires: python
 %if %{with_systemd}
 BuildRequires: systemd-units
