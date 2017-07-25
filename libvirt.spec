@@ -59,7 +59,13 @@
 
 # Then the secondary host drivers, which run inside libvirtd
 %if 0%{?fedora} || 0%{?rhel} >= 7
-    %define with_storage_rbd      0%{!?_without_storage_rbd:1}
+    # Temporary hack due to ceph breakage
+    # https://bugzilla.redhat.com/show_bug.cgi?id=1474743
+    %ifarch %{ix86} %{arm} ppc64
+        %define with_storage_rbd      0
+    %else
+        %define with_storage_rbd      0%{!?_without_storage_rbd:1}
+    %endif
 %else
     %define with_storage_rbd      0
 %endif
@@ -2072,7 +2078,7 @@ exit 0
 
 %changelog
 * Tue Jul 25 2017 Daniel P. Berrange <berrange@redhat.com> - 3.5.0-3
-- Rebuild for changed rbd soname
+- Disabled RBD on i386, arm, ppc64 (rhbz #1474743)
 
 * Mon Jul 17 2017 Cole Robinson <crobinso@redhat.com> - 3.5.0-2
 - Rebuild for xen 4.9
