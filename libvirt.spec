@@ -233,7 +233,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 3.5.0
-Release: 3%{?dist}%{?extra_release}
+Release: 4%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -2077,6 +2077,9 @@ exit 0
 
 
 %changelog
+* Sun Jul 30 2017 Florian Weimer <fweimer@redhat.com> - 3.5.0-4
+- Rebuild with binutils fix for ppc64le (#1475636)
+
 * Tue Jul 25 2017 Daniel P. Berrange <berrange@redhat.com> - 3.5.0-3
 - Disabled RBD on i386, arm, ppc64 (rhbz #1474743)
 
