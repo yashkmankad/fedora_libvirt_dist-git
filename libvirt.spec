@@ -1462,7 +1462,7 @@ rm -fr %{buildroot}
 %check
 cd tests
 # These tests don't current work in a mock build root
-for i in nodeinfotest seclabeltest
+for i in nodeinfotest seclabeltest qemumonitorjsontest
 do
   rm -f $i
   printf 'int main(void) { return 0; }' > $i.c
