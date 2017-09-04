@@ -239,7 +239,7 @@
 
 Summary: Library providing a simple virtualization API
 Name: libvirt
-Version: 3.6.0
+Version: 3.7.0
 Release: 1%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
@@ -292,7 +292,11 @@ BuildRequires: libtool
 BuildRequires: /usr/bin/pod2man
 %endif
 BuildRequires: git
+%if 0%{?fedora} >= 27
 BuildRequires: perl-interpreter
+%else
+BuildRequires: perl
+%endif
 BuildRequires: python
 %if %{with_systemd}
 BuildRequires: systemd-units
@@ -301,7 +305,6 @@ BuildRequires: systemd-units
 BuildRequires: xen-devel
 %endif
 BuildRequires: libxml2-devel
-BuildRequires: xhtml1-dtds
 BuildRequires: libxslt
 BuildRequires: readline-devel
 BuildRequires: ncurses-devel
@@ -1462,7 +1465,7 @@ rm -fr %{buildroot}
 %check
 cd tests
 # These tests don't current work in a mock build root
-for i in nodeinfotest seclabeltest qemumonitorjsontest
+for i in nodeinfotest seclabeltest
 do
   rm -f $i
   printf 'int main(void) { return 0; }' > $i.c
@@ -2118,6 +2121,9 @@ exit 0
 
 
 %changelog
+* Mon Sep  4 2017 Daniel P. Berrange <berrange@redhat.com> - 3.7.0-1
+- Rebase to version 3.7.0
+
 * Wed Aug  2 2017 Daniel P. Berrange <berrange@redhat.com> - 3.6.0-1
 - Rebase to version 3.6.0
 
