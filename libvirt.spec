@@ -15,7 +15,6 @@
 # touch configure.ac or Makefile.am.
 %{!?enable_autotools:%global enable_autotools 0}
 
-
 # The hypervisor drivers that run in libvirtd
 %define with_xen           0%{!?_without_xen:1}
 %define with_qemu          0%{!?_without_qemu:1}
@@ -239,7 +238,7 @@
 
 Summary: Library providing a simple virtualization API
 Name: libvirt
-Version: 3.7.0
+Version: 3.8.0
 Release: 1%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
@@ -1092,10 +1091,6 @@ Libvirt plugin for NSS for translating domain names into IP addresses.
 
 
 %prep
-%if ! %{supported_platform}
-echo "This RPM requires either Fedora >= 20 or RHEL >= 6"
-exit 1
-%endif
 
 %setup -q
 
@@ -1136,6 +1131,11 @@ rm -f $PATCHLIST
 rm -rf .git
 
 %build
+%if ! %{supported_platform}
+echo "This RPM requires either Fedora >= 20 or RHEL >= 6"
+exit 1
+%endif
+
 %if %{with_xen}
     %define arg_xen --with-xen
 %else
@@ -1794,6 +1794,8 @@ exit 0
 %dir %attr(0711, root, root) %{_localstatedir}/cache/libvirt/
 
 
+%dir %attr(0755, root, root) %{_libdir}/libvirt/
+%dir %attr(0755, root, root) %{_libdir}/libvirt/connection-driver/
 %dir %attr(0755, root, root) %{_libdir}/libvirt/lock-driver
 %attr(0755, root, root) %{_libdir}/libvirt/lock-driver/lockd.so
 
@@ -2028,7 +2030,9 @@ exit 0
 %attr(0755, root, root) %{_libexecdir}/libvirt-guests.sh
 
 %files libs -f %{name}.lang
-%doc COPYING COPYING.LESSER
+# RHEL6 doesn't have 'license' macro
+%{!?_licensedir:%global license %%doc}
+%license COPYING COPYING.LESSER
 %config(noreplace) %{_sysconfdir}/libvirt/libvirt.conf
 %config(noreplace) %{_sysconfdir}/libvirt/libvirt-admin.conf
 %{_libdir}/libvirt.so.*
@@ -2121,6 +2125,9 @@ exit 0
 
 
 %changelog
+* Wed Oct  4 2017 Daniel P. Berrange <berrange@redhat.com> - 3.8.0-1
+- Rebase to version 3.8.0
+
 * Mon Sep  4 2017 Daniel P. Berrange <berrange@redhat.com> - 3.7.0-1
 - Rebase to version 3.7.0
 
