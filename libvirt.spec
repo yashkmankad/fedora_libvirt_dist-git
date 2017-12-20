@@ -239,7 +239,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 3.10.0
-Release: 1%{?dist}%{?extra_release}
+Release: 2%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -2152,6 +2152,9 @@ exit 0
 
 
 %changelog
+* Wed Dec 20 2017 Cole Robinson <crobinso@redhat.com> - 3.10.0-2
+- Rebuild for xen 4.10
+
 * Tue Dec  5 2017 Daniel P. Berrange <berrange@redhat.com> - 3.10.0-1
 - Rebase to version 3.10.0
 
