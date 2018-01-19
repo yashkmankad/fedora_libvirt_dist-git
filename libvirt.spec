@@ -462,6 +462,11 @@ BuildRequires: wireshark-devel >= 1.12.1
 BuildRequires: libssh-devel >= 0.7.0
 %endif
 
+%if 0%{fedora} > 27 || 0%{rhel} > 7
+BuildRequires: rpcgen
+BuildRequires: tirpc-devel
+%endif
+
 Provides: bundled(gnulib)
 
 %description
