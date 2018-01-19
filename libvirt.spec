@@ -1,10 +1,12 @@
 # -*- rpm-spec -*-
 
 # This spec file assumes you are building on a Fedora or RHEL version
-# that's still supported by the vendor: that means Fedora 23 or newer,
-# or RHEL 6 or newer. It may need some tweaks for other distros.
-# If neither fedora nor rhel was defined, try to guess them from dist
-%if (0%{?fedora} && 0%{?fedora} >= 23) || (0%{?rhel} && 0%{?rhel} >= 6)
+# that's still supported by the vendor. It may work on other distros
+# or versions, but no effort will be made to ensure that going forward.
+%define min_rhel 6
+%define min_fedora 26
+
+%if (0%{?fedora} && 0%{?fedora} >= %{min_fedora}) || (0%{?rhel} && 0%{?rhel} >= %{min_rhel})
     %define supported_platform 1
 %else
     %define supported_platform 0
@@ -87,6 +89,7 @@
 %define with_libssh2       0%{!?_without_libssh2:0}
 %define with_wireshark     0%{!?_without_wireshark:0}
 %define with_libssh        0%{!?_without_libssh:0}
+%define with_bash_completion  0%{!?_without_bash_completion:0}
 %define with_pm_utils      1
 
 # Finally set the OS / architecture specific special cases
@@ -190,6 +193,11 @@
     %define with_libssh 0%{!?_without_libssh:1}
 %endif
 
+# Enable bash-completion for new enough distros
+%if 0%{?fedora} || 0%{?rhel} >= 7
+    %define with_bash_completion  0%{!?_without_bash_completion:1}
+%endif
+
 
 %if %{with_qemu} || %{with_lxc} || %{with_uml}
 # numad is used to manage the CPU and memory placement dynamically,
@@ -238,8 +246,8 @@
 
 Summary: Library providing a simple virtualization API
 Name: libvirt
-Version: 3.10.0
-Release: 2%{?dist}%{?extra_release}
+Version: 4.0.0
+Release: 1%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -306,6 +314,9 @@ BuildRequires: xen-devel
 BuildRequires: libxml2-devel
 BuildRequires: libxslt
 BuildRequires: readline-devel
+%if %{with_bash_completion}
+BuildRequires: bash-completion >= 2.0
+%endif
 BuildRequires: ncurses-devel
 BuildRequires: gettext
 BuildRequires: libtasn1-devel
@@ -1132,7 +1143,7 @@ rm -rf .git
 
 %build
 %if ! %{supported_platform}
-echo "This RPM requires either Fedora >= 20 or RHEL >= 6"
+echo "This RPM requires either Fedora >= %{min_fedora} or RHEL >= %{min_rhel}"
 exit 1
 %endif
 
@@ -2047,6 +2058,10 @@ exit 0
 %{_datadir}/systemtap/tapset/libvirt_qemu_probes*.stp
 %{_datadir}/systemtap/tapset/libvirt_functions.stp
 
+%if %{with_bash_completion}
+%{_datadir}/bash-completion/completions/vsh
+%endif
+
 
 %if %{with_systemd}
 %{_unitdir}/libvirt-guests.service
@@ -2152,6 +2167,9 @@ exit 0
 
 
 %changelog
+* Fri Jan 19 2018 Daniel P. Berrange <berrange@redhat.com> - 4.0.0-1
+- Rebase to version 4.0.0
+
 * Wed Dec 20 2017 Cole Robinson <crobinso@redhat.com> - 3.10.0-2
 - Rebuild for xen 4.10
 
