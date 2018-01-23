@@ -6,6 +6,11 @@
 %define min_rhel 6
 %define min_fedora 26
 
+# Fedora >= 28 default RPM linker flags set  "-z defs" to refuse
+# to link when there are undefined symbols. This breaks all of our
+# dlopen()able plugins, so we must turn it off.
+%undefine _strict_symbol_defs_build
+
 %if (0%{?fedora} && 0%{?fedora} >= %{min_fedora}) || (0%{?rhel} && 0%{?rhel} >= %{min_rhel})
     %define supported_platform 1
 %else
