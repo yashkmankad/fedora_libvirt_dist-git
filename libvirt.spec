@@ -255,7 +255,6 @@ Version: 4.3.0
 Release: 1%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
-BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 URL: https://libvirt.org/
 
 %if %(echo %{version} | grep -q "\.0$"; echo $?) == 1
