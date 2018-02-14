@@ -1483,9 +1483,6 @@ mv $RPM_BUILD_ROOT%{_datadir}/systemtap/tapset/libvirt_qemu_probes.stp \
    $RPM_BUILD_ROOT%{_datadir}/systemtap/tapset/libvirt_qemu_probes-64.stp
 %endif
 
-%clean
-rm -fr %{buildroot}
-
 %check
 cd tests
 # These tests don't current work in a mock build root
