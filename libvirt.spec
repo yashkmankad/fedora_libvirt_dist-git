@@ -6,11 +6,6 @@
 %define min_rhel 6
 %define min_fedora 26
 
-# Fedora >= 28 default RPM linker flags set  "-z defs" to refuse
-# to link when there are undefined symbols. This breaks all of our
-# dlopen()able plugins, so we must turn it off.
-%undefine _strict_symbol_defs_build
-
 %if (0%{?fedora} && 0%{?fedora} >= %{min_fedora}) || (0%{?rhel} && 0%{?rhel} >= %{min_rhel})
     %define supported_platform 1
 %else
@@ -78,7 +73,7 @@
 %define with_numactl          0%{!?_without_numactl:1}
 
 # F25+ has zfs-fuse
-%if 0%{?fedora} >= 25
+%if 0%{?fedora}
     %define with_storage_zfs      0%{!?_without_storage_zfs:1}
 %else
     %define with_storage_zfs      0
@@ -148,6 +143,10 @@
     %define with_libxl 0
     %define with_hyperv 0
     %define with_vz 0
+
+    %if 0%{?rhel} > 7
+        %define with_lxc 0
+    %endif
 %endif
 
 # Fedora 17 / RHEL-7 are first where we use systemd. Although earlier
@@ -168,7 +167,7 @@
 %endif
 
 # fuse is used to provide virtualized /proc for LXC
-%if 0%{?fedora} || 0%{?rhel} >= 7
+%if %{with_lxc} && 0%{?rhel} != 6
     %define with_fuse      0%{!?_without_fuse:1}
 %endif
 
@@ -238,29 +237,27 @@
     %define enable_werror --disable-werror
 %endif
 
-%if 0%{?fedora} >= 25
+%if 0%{?fedora}
     %define tls_priority "@LIBVIRT,SYSTEM"
 %else
-    %if 0%{?fedora}
-        %define tls_priority "@SYSTEM"
-    %else
-        %define tls_priority "NORMAL"
-    %endif
+    %define tls_priority "NORMAL"
 %endif
 
 
 Summary: Library providing a simple virtualization API
 Name: libvirt
-Version: 4.0.0
-Release: 2%{?dist}%{?extra_release}
+Version: 4.1.0
+Release: 1%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
+BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 URL: https://libvirt.org/
 
 %if %(echo %{version} | grep -q "\.0$"; echo $?) == 1
     %define mainturl stable_updates/
 %endif
 Source: https://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.xz
+Patch1: 0001-tests-force-use-of-NORMAL-TLS-priority-in-test-suite.patch
 
 Requires: libvirt-daemon = %{version}-%{release}
 Requires: libvirt-daemon-config-network = %{version}-%{release}
@@ -303,7 +300,7 @@ BuildRequires: libtool
 BuildRequires: /usr/bin/pod2man
 %endif
 BuildRequires: git
-%if 0%{?fedora} >= 27
+%if 0%{?fedora} >= 27 || 0%{?rhel} > 7
 BuildRequires: perl-interpreter
 %else
 BuildRequires: perl
@@ -455,11 +452,7 @@ BuildRequires: numad
 %endif
 
 %if %{with_wireshark}
-    %if 0%{fedora} >= 24
 BuildRequires: wireshark-devel >= 2.1.0
-    %else
-BuildRequires: wireshark-devel >= 1.12.1
-    %endif
 %endif
 
 %if %{with_libssh}
@@ -803,7 +796,7 @@ Requires: gzip
 Requires: bzip2
 Requires: lzop
 Requires: xz
-    %if 0%{?fedora} >= 24
+    %if 0%{?fedora} || 0%{?rhel} > 7
 Requires: systemd-container
     %endif
 
@@ -821,7 +814,7 @@ Group: Development/Libraries
 Requires: libvirt-daemon = %{version}-%{release}
 # There really is a hard cross-driver dependency here
 Requires: libvirt-daemon-driver-network = %{version}-%{release}
-    %if 0%{?fedora} >= 24
+    %if 0%{?fedora} || 0%{?rhel} > 7
 Requires: systemd-container
     %endif
 
@@ -1026,6 +1019,9 @@ Requires: gnutls-utils
 # Needed for probing the power management features of the host.
 Requires: pm-utils
 %endif
+%if %{with_bash_completion}
+Requires: %{name}-bash-completion = %{version}-%{release}
+%endif
 
 %description client
 The client binaries needed to access the virtualization
@@ -1050,9 +1046,21 @@ Summary: Set of tools to control libvirt daemon
 Group: Development/Libraries
 Requires: %{name}-libs = %{version}-%{release}
 Requires: readline
+%if %{with_bash_completion}
+Requires: %{name}-bash-completion = %{version}-%{release}
+%endif
 
 %description admin
 The client side utilities to control the libvirt daemon.
+
+%if %{with_bash_completion}
+%package bash-completion
+Summary: Bash completion script
+Group: Development/Libraries
+
+%description bash-completion
+Bash completion script stub.
+%endif
 
 %if %{with_wireshark}
 %package wireshark
@@ -1176,8 +1184,10 @@ exit 1
 
 %if %{with_lxc}
     %define arg_lxc --with-lxc
+    %define arg_login_shell --with-login-shell
 %else
     %define arg_lxc --without-lxc
+    %define arg_login_shell --without-login-shell
 %endif
 
 %if %{with_vbox}
@@ -1387,7 +1397,8 @@ rm -f po/stamp-po
            %{?arg_loader_nvram} \
            %{?enable_werror} \
            --enable-expensive-tests \
-           %{arg_init_script}
+           %{arg_init_script} \
+           %{?arg_login_shell}
 make %{?_smp_mflags} V=1
 gzip -9 ChangeLog
 
@@ -1412,13 +1423,7 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libvirt/connection-driver/*.a
 rm -f $RPM_BUILD_ROOT%{_libdir}/libvirt/storage-backend/*.la
 rm -f $RPM_BUILD_ROOT%{_libdir}/libvirt/storage-backend/*.a
 %if %{with_wireshark}
-    %if 0%{fedora} >= 24
 rm -f $RPM_BUILD_ROOT%{_libdir}/wireshark/plugins/libvirt.la
-    %else
-rm -f $RPM_BUILD_ROOT%{_libdir}/wireshark/plugins/*/libvirt.la
-mv $RPM_BUILD_ROOT%{_libdir}/wireshark/plugins/*/libvirt.so \
-      $RPM_BUILD_ROOT%{_libdir}/wireshark/plugins/libvirt.so
-    %endif
 %endif
 
 install -d -m 0755 $RPM_BUILD_ROOT%{_datadir}/lib/libvirt/dnsmasq/
@@ -1483,6 +1488,9 @@ mv $RPM_BUILD_ROOT%{_datadir}/systemtap/tapset/libvirt_qemu_probes.stp \
    $RPM_BUILD_ROOT%{_datadir}/systemtap/tapset/libvirt_qemu_probes-64.stp
 %endif
 
+%clean
+rm -fr %{buildroot}
+
 %check
 cd tests
 # These tests don't current work in a mock build root
@@ -1511,13 +1519,17 @@ exit 0
 
 %if %{with_systemd}
     %if %{with_systemd_macros}
-        %systemd_post virtlockd.socket virtlogd.socket libvirtd.service
+        %systemd_post virtlockd.socket virtlockd-admin.socket \
+            virtlogd.socket virtlogd-admin.socket \
+            libvirtd.service
     %else
 if [ $1 -eq 1 ] ; then
     # Initial installation
     /bin/systemctl enable \
         virtlockd.socket \
+        virtlockd-admin.socket \
         virtlogd.socket \
+        virtlogd-admin.socket \
         libvirtd.service >/dev/null 2>&1 || :
 fi
     %endif
@@ -1544,21 +1556,27 @@ touch %{_localstatedir}/lib/rpm-state/libvirt/restart || :
 %preun daemon
 %if %{with_systemd}
     %if %{with_systemd_macros}
-        %systemd_preun libvirtd.service virtlogd.socket virtlogd.service virtlockd.socket virtlockd.service
+        %systemd_preun libvirtd.service \
+            virtlogd.socket virtlogd-admin.socket virtlogd.service \
+            virtlockd.socket virtlockd-admin.socket virtlockd.service
     %else
 if [ $1 -eq 0 ] ; then
     # Package removal, not upgrade
     /bin/systemctl --no-reload disable \
         libvirtd.service \
         virtlogd.socket \
+        virtlogd-admin.socket \
         virtlogd.service \
         virtlockd.socket \
+        virtlockd-admin.socket \
         virtlockd.service > /dev/null 2>&1 || :
     /bin/systemctl stop \
         libvirtd.service \
         virtlogd.socket \
+        virtlogd-admin.socket \
         virtlogd.service \
         virtlockd.socket \
+        virtlockd-admin.socket \
         virtlockd.service > /dev/null 2>&1 || :
 fi
     %endif
@@ -1587,15 +1605,6 @@ if [ $1 -ge 1 ]; then
 fi
 %endif
 
-%if %{with_systemd}
-%else
-%triggerpostun daemon -- libvirt-daemon < 1.2.1
-if [ "$1" -ge "1" ]; then
-    /sbin/service virtlockd reload > /dev/null 2>&1 || :
-    /sbin/service virtlogd reload > /dev/null 2>&1 || :
-fi
-%endif
-
 # In upgrade scenario we must explicitly enable virtlockd/virtlogd
 # sockets, if libvirtd is already enabled and start them if
 # libvirtd is running, otherwise you'll get failures to start
@@ -1603,15 +1612,17 @@ fi
 %triggerpostun daemon -- libvirt-daemon < 1.3.0
 if [ $1 -ge 1 ] ; then
 %if %{with_systemd}
-        /bin/systemctl is-enabled libvirtd.service 1>/dev/null 2>&1 &&
-            /bin/systemctl enable virtlogd.socket || :
-        /bin/systemctl is-active libvirtd.service 1>/dev/null 2>&1 &&
-            /bin/systemctl start virtlogd.socket || :
+    /bin/systemctl is-enabled libvirtd.service 1>/dev/null 2>&1 &&
+        /bin/systemctl enable virtlogd.socket virtlogd-admin.socket || :
+    /bin/systemctl is-active libvirtd.service 1>/dev/null 2>&1 &&
+        /bin/systemctl start virtlogd.socket virtlogd-admin.socket || :
 %else
-        /sbin/chkconfig libvirtd 1>/dev/null 2>&1 &&
-            /sbin/chkconfig virtlogd on || :
-        /sbin/service libvirtd status 1>/dev/null 2>&1 &&
-            /sbin/service virtlogd start || :
+    /sbin/chkconfig libvirtd 1>/dev/null 2>&1 &&
+        /sbin/chkconfig virtlogd on || :
+    /sbin/service libvirtd status 1>/dev/null 2>&1 &&
+        /sbin/service virtlogd start || :
+    /sbin/service virtlockd reload > /dev/null 2>&1 || :
+    /sbin/service virtlogd reload > /dev/null 2>&1 || :
 %endif
 fi
 
@@ -1811,14 +1822,15 @@ exit 0
 %{_unitdir}/virt-guest-shutdown.target
 %{_unitdir}/virtlogd.service
 %{_unitdir}/virtlogd.socket
+%{_unitdir}/virtlogd-admin.socket
 %{_unitdir}/virtlockd.service
 %{_unitdir}/virtlockd.socket
+%{_unitdir}/virtlockd-admin.socket
 %else
 %{_sysconfdir}/rc.d/init.d/libvirtd
 %{_sysconfdir}/rc.d/init.d/virtlogd
 %{_sysconfdir}/rc.d/init.d/virtlockd
 %endif
-%doc daemon/libvirtd.upstart
 %config(noreplace) %{_sysconfdir}/sysconfig/libvirtd
 %config(noreplace) %{_sysconfdir}/sysconfig/virtlogd
 %config(noreplace) %{_sysconfdir}/sysconfig/virtlockd
@@ -2065,7 +2077,7 @@ exit 0
 %{_datadir}/systemtap/tapset/libvirt_functions.stp
 
 %if %{with_bash_completion}
-%{_datadir}/bash-completion/completions/vsh
+%{_datadir}/bash-completion/completions/virsh
 %endif
 
 
@@ -2117,7 +2129,14 @@ exit 0
 %files admin
 %{_mandir}/man1/virt-admin.1*
 %{_bindir}/virt-admin
+%if %{with_bash_completion}
+%{_datadir}/bash-completion/completions/virt-admin
+%endif
 
+%if %{with_bash_completion}
+%files bash-completion
+%{_datadir}/bash-completion/completions/vsh
+%endif
 
 %if %{with_wireshark}
 %files wireshark
@@ -2173,6 +2192,9 @@ exit 0
 
 
 %changelog
+* Mon Mar  5 2018 Daniel Berrange <berrange@redhat.com> - 4.1.0-1
+- Rebase to version 4.1.0
+
 * Wed Feb 07 2018 Fedora Release Engineering <releng@fedoraproject.org> - 4.0.0-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_28_Mass_Rebuild
 
