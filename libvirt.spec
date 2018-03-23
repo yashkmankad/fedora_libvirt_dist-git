@@ -247,7 +247,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 4.1.0
-Release: 2%{?dist}%{?extra_release}
+Release: 3%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -306,7 +306,7 @@ BuildRequires: perl-interpreter
 %else
 BuildRequires: perl
 %endif
-BuildRequires: python
+BuildRequires: python2
 %if %{with_systemd}
 BuildRequires: systemd-units
 %endif
@@ -2193,6 +2193,10 @@ exit 0
 
 
 %changelog
+* Fri Mar 23 2018 Iryna Shcherbina <ishcherb@redhat.com> - 4.1.0-3
+- Update Python 2 dependency declarations to new packaging standards
+  (See https://fedoraproject.org/wiki/FinalizingFedoraSwitchtoPython3)
+
 * Wed Mar 21 2018 Daniel P. Berrangé <berrange@redhat.com> - 4.1.0-2
 - Fix systemd macro argument with line continuations (rhbz#1558648)
 
