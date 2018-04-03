@@ -202,6 +202,13 @@
     %define with_bash_completion  0%{!?_without_bash_completion:1}
 %endif
 
+# Use Python 3 when possible, Python 2 otherwise
+%if 0%{?fedora} || 0%{?rhel} > 7
+    %define python python3
+%else
+    %define python python2
+%endif
+
 
 %if %{with_qemu} || %{with_lxc} || %{with_uml}
 # numad is used to manage the CPU and memory placement dynamically,
@@ -246,8 +253,8 @@
 
 Summary: Library providing a simple virtualization API
 Name: libvirt
-Version: 4.1.0
-Release: 3%{?dist}%{?extra_release}
+Version: 4.2.0
+Release: 1%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -257,8 +264,6 @@ URL: https://libvirt.org/
     %define mainturl stable_updates/
 %endif
 Source: https://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.xz
-Patch1: 0001-Workaround-removal-of-libio.h.patch
-Patch2: 0001-tests-force-use-of-NORMAL-TLS-priority-in-test-suite.patch
 
 Requires: libvirt-daemon = %{version}-%{release}
 Requires: libvirt-daemon-config-network = %{version}-%{release}
@@ -300,13 +305,14 @@ BuildRequires: gettext-devel
 BuildRequires: libtool
 BuildRequires: /usr/bin/pod2man
 %endif
+BuildRequires: gcc
 BuildRequires: git
 %if 0%{?fedora} >= 27 || 0%{?rhel} > 7
 BuildRequires: perl-interpreter
 %else
 BuildRequires: perl
 %endif
-BuildRequires: python2
+BuildRequires: %{python}
 %if %{with_systemd}
 BuildRequires: systemd-units
 %endif
@@ -359,11 +365,9 @@ BuildRequires: ebtables
 BuildRequires: module-init-tools
 BuildRequires: cyrus-sasl-devel
 %if 0%{?fedora} || 0%{?rhel} >= 7
-# F22 polkit-devel doesn't pull in polkit anymore, which we need for pkcheck
 BuildRequires: polkit >= 0.112
-BuildRequires: polkit-devel >= 0.112
 %else
-BuildRequires: polkit-devel >= 0.93
+BuildRequires: polkit >= 0.93
 %endif
 # For mount/umount in FS driver
 BuildRequires: util-linux
@@ -2193,6 +2197,9 @@ exit 0
 
 
 %changelog
+* Tue Apr  3 2018 Daniel P. Berrangé <berrange@redhat.com> - 4.2.0-1
+- Update to 4.2.0 release
+
 * Fri Mar 23 2018 Iryna Shcherbina <ishcherb@redhat.com> - 4.1.0-3
 - Update Python 2 dependency declarations to new packaging standards
   (See https://fedoraproject.org/wiki/FinalizingFedoraSwitchtoPython3)
