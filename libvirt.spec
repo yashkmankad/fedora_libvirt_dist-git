@@ -2126,7 +2126,7 @@ exit 0
 
 
 %changelog
-* Tue June  5 2018 Daniel P. Berrangé <berrange@redhat.com> - 4.4.0-1
+* Tue Jun  5 2018 Daniel P. Berrangé <berrange@redhat.com> - 4.4.0-1
 - Update to 4.4.0 release
 
 * Thu May  3 2018 Daniel P. Berrangé <berrange@redhat.com> - 4.3.0-1
