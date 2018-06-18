@@ -247,7 +247,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 4.1.0
-Release: 2%{?dist}%{?extra_release}
+Release: 3%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -258,6 +258,8 @@ URL: https://libvirt.org/
 %endif
 Source: https://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.xz
 Patch1: 0001-tests-force-use-of-NORMAL-TLS-priority-in-test-suite.patch
+Patch2: 0001-cpu-define-the-ssbd-CPUID-feature-bit-CVE-2018-3639.patch
+Patch3: 0002-cpu-define-the-virt-ssbd-CPUID-feature-bit-CVE-2018-.patch
 
 Requires: libvirt-daemon = %{version}-%{release}
 Requires: libvirt-daemon-config-network = %{version}-%{release}
@@ -2192,6 +2194,9 @@ exit 0
 
 
 %changelog
+* Mon Jun 18 2018 Daniel P. Berrangé <berrange@redhat.com> - 4.1.0-3
+- Add new CPU features for speculative store bypass (CVE-2018-3639)
+
 * Wed Mar 21 2018 Daniel P. Berrangé <berrange@redhat.com> - 4.1.0-2
 - Fix systemd macro argument with line continuations (rhbz#1558648)
 
