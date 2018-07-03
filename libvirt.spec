@@ -251,7 +251,7 @@
 
 Summary: Library providing a simple virtualization API
 Name: libvirt
-Version: 4.4.0
+Version: 4.5.0
 Release: 1%{?dist}%{?extra_release}
 License: LGPLv2+
 URL: https://libvirt.org/
@@ -1773,6 +1773,7 @@ exit 0
 %config(noreplace) %{_sysconfdir}/libvirt/libvirtd.conf
 %config(noreplace) %{_sysconfdir}/libvirt/virtlogd.conf
 %config(noreplace) %{_sysconfdir}/libvirt/virtlockd.conf
+%config(noreplace) %{_sysconfdir}/sasl2/libvirt.conf
 %config(noreplace) %{_prefix}/lib/sysctl.d/60-libvirtd.conf
 
 %config(noreplace) %{_sysconfdir}/logrotate.d/libvirtd
@@ -1911,6 +1912,8 @@ exit 0
 %{_datadir}/augeas/lenses/libvirtd_qemu.aug
 %{_datadir}/augeas/lenses/tests/test_libvirtd_qemu.aug
 %{_libdir}/%{name}/connection-driver/libvirt_driver_qemu.so
+%dir %attr(0711, root, root) %{_localstatedir}/lib/libvirt/swtpm/
+%dir %attr(0711, root, root) %{_localstatedir}/log/swtpm/libvirt/qemu/
 %endif
 
 %if %{with_lxc}
@@ -2049,6 +2052,8 @@ exit 0
 %{_datadir}/libvirt/schemas/networkcommon.rng
 %{_datadir}/libvirt/schemas/nodedev.rng
 %{_datadir}/libvirt/schemas/nwfilter.rng
+%{_datadir}/libvirt/schemas/nwfilter_params.rng
+%{_datadir}/libvirt/schemas/nwfilterbinding.rng
 %{_datadir}/libvirt/schemas/secret.rng
 %{_datadir}/libvirt/schemas/storagecommon.rng
 %{_datadir}/libvirt/schemas/storagepool.rng
@@ -2057,8 +2062,6 @@ exit 0
 %{_datadir}/libvirt/cpu_map.xml
 
 %{_datadir}/libvirt/test-screenshot.png
-
-%config(noreplace) %{_sysconfdir}/sasl2/libvirt.conf
 
 %files admin
 %{_mandir}/man1/virt-admin.1*
@@ -2126,6 +2129,9 @@ exit 0
 
 
 %changelog
+* Tue Jul  3 2018 Daniel P. Berrangé <berrange@redhat.com> - 4.5.0-1
+- Update to 4.5.0 release
+
 * Tue Jun  5 2018 Daniel P. Berrangé <berrange@redhat.com> - 4.4.0-1
 - Update to 4.4.0 release
 
