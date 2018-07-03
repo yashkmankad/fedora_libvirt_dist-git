@@ -252,7 +252,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 4.1.0
-Release: 3%{?dist}%{?extra_release}
+Release: 4%{?dist}%{?extra_release}
 License: LGPLv2+
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -265,6 +265,11 @@ Source: https://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.xz
 Patch1: 0001-tests-force-use-of-NORMAL-TLS-priority-in-test-suite.patch
 Patch2: 0001-cpu-define-the-ssbd-CPUID-feature-bit-CVE-2018-3639.patch
 Patch3: 0002-cpu-define-the-virt-ssbd-CPUID-feature-bit-CVE-2018-.patch
+# Fix virtlockd-admin.socket syntax (bz #1586239)
+Patch5: 0004-lockd-fix-typo-in-virtlockd-admin.socket.patch
+# nwfilter: increase pcap buffer size to be compatible with TPACKET_V3 (bz
+# #1547237)
+Patch4: 0005-nwfilter-increase-pcap-buffer-size-to-be-compatible-.patch
 
 Requires: libvirt-daemon = %{version}-%{release}
 Requires: libvirt-daemon-config-network = %{version}-%{release}
@@ -2199,6 +2204,11 @@ exit 0
 
 
 %changelog
+* Tue Jul 03 2018 Cole Robinson <crobinso@redhat.com> - 4.1.0-4
+- Fix virtlockd-admin.socket syntax (bz #1586239)
+- nwfilter: increase pcap buffer size to be compatible with TPACKET_V3 (bz
+  #1547237)
+
 * Mon Jun 18 2018 Daniel P. Berrangé <berrange@redhat.com> - 4.1.0-3
 - Add new CPU features for speculative store bypass (CVE-2018-3639)
 
