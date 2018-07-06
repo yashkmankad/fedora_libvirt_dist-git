@@ -252,7 +252,7 @@
 Summary: Library providing a simple virtualization API
 Name: libvirt
 Version: 4.5.0
-Release: 1%{?dist}%{?extra_release}
+Release: 2%{?dist}%{?extra_release}
 License: LGPLv2+
 URL: https://libvirt.org/
 
@@ -260,6 +260,10 @@ URL: https://libvirt.org/
     %define mainturl stable_updates/
 %endif
 Source: https://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.xz
+Patch1:	0001-qemu-remove-chardevStdioLogd-param-from-vhostuser-co.patch
+Patch2:	0002-qemu-consolidate-parameters-of-qemuBuildChrChardevSt.patch
+Patch3:	0003-qemu-don-t-use-chardev-FD-passing-for-vhostuser-back.patch
+Patch4:	0004-qemu-fix-UNIX-socket-chardevs-operating-in-client-mo.patch
 
 Requires: libvirt-daemon = %{version}-%{release}
 Requires: libvirt-daemon-config-network = %{version}-%{release}
@@ -2129,6 +2133,9 @@ exit 0
 
 
 %changelog
+* Fri Jul  6 2018 Daniel P. Berrangé <berrange@redhat.com> - 4.5.0-2
+- Fix regressions with chardev handling
+
 * Tue Jul  3 2018 Daniel P. Berrangé <berrange@redhat.com> - 4.5.0-1
 - Update to 4.5.0 release
 
