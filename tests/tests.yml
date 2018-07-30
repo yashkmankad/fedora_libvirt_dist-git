@@ -1,0 +1,103 @@
+---
+# tests that run in a classic context
+- hosts: localhost
+  vars:
+    vt_type: libvirt
+    vt_machine_type: 'i440fx'
+
+  tags:
+  - classic
+
+  tasks:
+  - name: Install avocado-fedora repo
+    yum_repository:
+      name: avocado
+      description: avocado-fedora repo
+      baseurl: https://avocado-project.org/data/repos/fedora-28-noarch/
+      skip_if_unavailable: yes
+      gpgkey: https://avocado-project.org/data/repos/crosa_redhat_com.gpg
+      gpgcheck: yes
+      enabled: yes
+
+  - name: Add EPEL repository
+    yum_repository:
+      name: epel
+      description: EPEL repo
+      baseurl: https://dl.fedoraproject.org/pub/epel/$releasever/$basearch/
+      gpgkey: https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-$releasever
+
+  # If packages are installed, this will not update them
+  # If they are not installed, it will install from the default repo
+  - name: Check to see if virtualization packages are installed
+    dnf:
+      name: "{{ item }}"
+      state: present
+    with_items:
+      - qemu-kvm
+      - libvirt
+      - libvirt-python
+      - libvirt-devel
+
+  - name: Install system packages needed for Avocado
+    package:
+      name: "{{ item }}"
+      state: present
+    ignore_errors: True
+    with_items:
+      - tcpdump
+      - genisoimage
+      - fakeroot
+      - virt-install
+      - python-requests
+      - python-sphinx
+      - gdb
+      - gdb-gdbserver
+      - git
+      - python-devel
+      - gcc
+      - python-stevedore
+      - policycoreutils-python
+      - attr
+      - autotest-framework
+      - python2-yaml
+      - gstreamer1-plugins-good
+      - policycoreutils-python-utils
+      - pygobject2
+      - python-aexpect
+      - python-imaging
+      - python-netaddr
+      - python-netifaces
+      - python-simplejson
+
+  - name: Install Avocado
+    dnf:
+      name: '{{ item }}'
+      state: latest
+      # Disbaling 'updates' and 'rawhide' repo as it installs python-avocado-52.1
+      # which is available in these repos
+      disablerepo: "rawhide,updates"
+    with_items:
+      - python2-avocado
+      - avocado-plugins-vt
+      - python2-avocado-plugins-varianter-yaml-to-mux
+
+  - name: Start the libvirtd service
+    service:
+      name: libvirtd
+      state: started
+      enabled: yes
+
+  # Runs the bootstrap command which lets Avocado run virtualization tests
+  # and also downloads the JeOS image
+  - name: Avocado-VT bootstrap
+    shell: avocado vt-bootstrap --vt-type {{ vt_type }} --yes-to-all
+
+  # Runs the basic set of tests listed in the devel_minimum file
+  - name: Run avocado tests
+    shell: >
+      avocado run --vt-type {{ vt_type }} --vt-machine-type {{ vt_machine_type }}
+      $(cat {{ test_suite }}.txt)
+      --vt-extra-params 'verify_host_dmesg = no'
+    vars:
+      - test_suite: devel_minimum
+    ignore_errors: yes
