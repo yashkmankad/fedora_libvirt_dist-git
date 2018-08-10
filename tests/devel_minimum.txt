@@ -1,0 +1,7 @@
+type_specific.io-github-autotest-libvirt.virsh.dominfo.normal_test.id_option
+type_specific.io-github-autotest-libvirt.virsh.version.no_option
+type_specific.io-github-autotest-libvirt.virsh.net_info.normal_test.name_option
+io-github-autotest-qemu.boot
+io-github-autotest-qemu.reboot
+type_specific.io-github-autotest-qemu.migrate.default.tcp
+io-github-autotest-qemu.shutdown
